@@ -1,0 +1,173 @@
+package provider
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"os"
+
+	"connectrpc.com/connect"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	mgmtv1alpha1 "github.com/nucleuscloud/neosync/backend/gen/go/protos/mgmt/v1alpha1"
+	"github.com/nucleuscloud/neosync/backend/gen/go/protos/mgmt/v1alpha1/mgmtv1alpha1connect"
+	http_client "github.com/nucleuscloud/terraform-provider-neosync/internal/http/client"
+)
+
+// Ensure NeosyncProvider satisfies various provider inferfaces
+var _ provider.Provider = &NeosyncProvider{}
+
+type NeosyncProvider struct {
+	version string
+}
+
+type NeosyncProviderModel struct {
+	ApiToken  types.String `tfsdk:"api_token"`
+	Endpoint  types.String `tfsdk:"endpoint"`
+	AccountId types.String `tfsdk:"account_id"`
+}
+
+func (p *NeosyncProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
+	resp.TypeName = "neosync"
+	resp.Version = p.version
+}
+
+func (p *NeosyncProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Attributes: map[string]schema.Attribute{
+			"endpoint": schema.StringAttribute{
+				MarkdownDescription: "The URL to the backend Neosync API server",
+				Optional:            true,
+			},
+			"api_token": schema.StringAttribute{
+				MarkdownDescription: "The account-level API token that will be used to authenticate with the API server",
+				Optional:            true,
+			},
+			"account_id": schema.StringAttribute{
+				MarkdownDescription: "The account id that should be associated with this provider and any resources that utilize it",
+				Optional:            true,
+			},
+		},
+	}
+}
+
+type ConfigData struct {
+	AccountId        *string
+	ConnectionClient mgmtv1alpha1connect.ConnectionServiceClient
+}
+
+func (p *NeosyncProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+	apiToken := os.Getenv("NEOSYNC_API_KEY")
+	endpoint := os.Getenv("NEOSYNC_ENDPOINT")
+	accountId := os.Getenv("NEOSYNC_ACCOUNT_ID")
+	// todo: add support for specifying account name along with a path to the location of a user jwt file
+
+	var data NeosyncProviderModel
+	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+
+	// Check configuration data, which should take precedence over
+	// environment variable data, if found.
+	if data.ApiToken.ValueString() != "" {
+		apiToken = data.ApiToken.ValueString()
+	}
+
+	if data.Endpoint.ValueString() != "" {
+		endpoint = data.Endpoint.ValueString()
+	}
+
+	if data.AccountId.ValueString() != "" {
+		accountId = data.AccountId.String()
+	}
+
+	if apiToken == "" {
+		resp.Diagnostics.AddWarning(
+			"Missing API Token Configuration",
+			"While configuring the provider, the API token was not found in "+
+				"the NEOSYNC_API_TOKEN environment variable or provider "+
+				"configuration block api_token attribute.",
+		)
+		// Not returning early allows the logic to collect all errors.
+	}
+
+	if endpoint == "" {
+		resp.Diagnostics.AddError(
+			"Missing Endpoint Configuration",
+			"While configuring the provider, the endpoint was not found in "+
+				"the NEOSYNC_ENDPOINT environment variable or provider "+
+				"configuration block endpoint attribute.",
+		)
+		// Not returning early allows the logic to collect all errors.
+	}
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Configuration values are now available.
+	// if data.Endpoint.IsNull() { /* ... */ }
+
+	// Example client configuration for data sources and resources
+	httpclient := http.DefaultClient
+	if apiToken != "" {
+		httpclient = http_client.NewWithHeaders(
+			map[string]string{"Authorization": fmt.Sprintf("Bearer %s", apiToken)},
+		)
+	}
+
+	connclient := mgmtv1alpha1connect.NewConnectionServiceClient(
+		httpclient,
+		endpoint,
+	)
+
+	if apiToken != "" && accountId == "" {
+		// retrieve account id from an RPC method that allows to retrieve account ids...
+		apiclient := mgmtv1alpha1connect.NewApiKeyServiceClient(httpclient, endpoint)
+		// todo: check if this is even possible to do today
+		apiResp, err := apiclient.GetAccountApiKey(ctx, connect.NewRequest(&mgmtv1alpha1.GetAccountApiKeyRequest{Id: apiToken}))
+		if err != nil {
+			resp.Diagnostics.AddError("account id error", err.Error())
+			return
+		}
+		accountId = apiResp.Msg.ApiKey.AccountId
+		// userclient := mgmtv1alpha1connect.NewUserAccountServiceClient(httpclient, endpoint)
+		// accResp, err := userclient.GetUserAccounts(ctx, connect.NewRequest(&mgmtv1alpha1.GetUserAccountsRequest{}))
+		// if err != nil {
+		// 	resp.Diagnostics.AddError("user account error", err.Error())
+		// 	return
+		// }
+		// if len()
+	}
+
+	configData := &ConfigData{
+		ConnectionClient: connclient,
+	}
+	if accountId != "" {
+		configData.AccountId = &accountId
+	}
+
+	resp.DataSourceData = configData
+	resp.ResourceData = configData
+}
+
+func (p *NeosyncProvider) Resources(ctx context.Context) []func() resource.Resource {
+	return []func() resource.Resource{
+		NewConnectionResource,
+	}
+}
+
+func (p *NeosyncProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
+	return []func() datasource.DataSource{
+		NewConnectionDataSource,
+	}
+}
+
+func New(version string) func() provider.Provider {
+	return func() provider.Provider {
+		return &NeosyncProvider{
+			version: version,
+		}
+	}
+}
