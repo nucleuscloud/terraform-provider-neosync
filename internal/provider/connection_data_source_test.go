@@ -14,9 +14,8 @@ func TestAcc_Connection_DataSource(t *testing.T) {
 			{
 				Config: testAccExampleDataSourceConfig,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.neosync_connection.test", "id", "d3fec0df-4333-4709-bd83-31e783ae9cb0"),
-					resource.TestCheckResourceAttr("data.neosync_connection.test", "name", "asdfsdf"),
-					// resource.TestCheckResourceAttr("data.neosync_connection.test", "name", "foosdf"),
+					resource.TestCheckResourceAttrSet("data.neosync_connection.test", "id"),
+					resource.TestCheckResourceAttr("data.neosync_connection.test", "name", "foo"),
 				),
 			},
 		},
@@ -24,7 +23,14 @@ func TestAcc_Connection_DataSource(t *testing.T) {
 }
 
 const testAccExampleDataSourceConfig = `
+resource "neosync_connection" "test" {
+  name = "foo"
+
+	postgres = {
+		url = "test-url"
+	}
+}
 data "neosync_connection" "test" {
-  id = "d3fec0df-4333-4709-bd83-31e783ae9cb0"
+  id = neosync_connection.test.id
 }
 `

@@ -6,15 +6,19 @@ import (
 	"net/http"
 	"os"
 
-	"connectrpc.com/connect"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	mgmtv1alpha1 "github.com/nucleuscloud/neosync/backend/gen/go/protos/mgmt/v1alpha1"
 	"github.com/nucleuscloud/neosync/backend/gen/go/protos/mgmt/v1alpha1/mgmtv1alpha1connect"
 	http_client "github.com/nucleuscloud/terraform-provider-neosync/internal/http/client"
+)
+
+const (
+	endpointEnvVarKey  = "NEOSYNC_ENDPOINT"
+	apiTokenEnvVarKey  = "NEOSYNC_API_TOKEN"
+	accountIdEnvVarKey = "NEOSYNC_ACCOUNT_ID"
 )
 
 // Ensure NeosyncProvider satisfies various provider inferfaces.
@@ -60,9 +64,9 @@ type ConfigData struct {
 }
 
 func (p *NeosyncProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
-	apiToken := os.Getenv("NEOSYNC_API_KEY")
-	endpoint := os.Getenv("NEOSYNC_ENDPOINT")
-	accountId := os.Getenv("NEOSYNC_ACCOUNT_ID")
+	apiToken := os.Getenv(apiTokenEnvVarKey)
+	endpoint := os.Getenv(endpointEnvVarKey)
+	accountId := os.Getenv(accountIdEnvVarKey)
 	// todo: add support for specifying account name along with a path to the location of a user jwt file
 
 	var data NeosyncProviderModel
@@ -79,14 +83,14 @@ func (p *NeosyncProvider) Configure(ctx context.Context, req provider.ConfigureR
 	}
 
 	if data.AccountId.ValueString() != "" {
-		accountId = data.AccountId.String()
+		accountId = data.AccountId.ValueString()
 	}
 
 	if apiToken == "" {
 		resp.Diagnostics.AddWarning(
 			"Missing API Token Configuration",
 			"While configuring the provider, the API token was not found in "+
-				"the NEOSYNC_API_TOKEN environment variable or provider "+
+				fmt.Sprintf("the %s environment variable or provider ", apiTokenEnvVarKey)+
 				"configuration block api_token attribute.",
 		)
 		// Not returning early allows the logic to collect all errors.
@@ -96,7 +100,7 @@ func (p *NeosyncProvider) Configure(ctx context.Context, req provider.ConfigureR
 		resp.Diagnostics.AddError(
 			"Missing Endpoint Configuration",
 			"While configuring the provider, the endpoint was not found in "+
-				"the NEOSYNC_ENDPOINT environment variable or provider "+
+				fmt.Sprintf("the %s environment variable or provider ", endpointEnvVarKey)+
 				"configuration block endpoint attribute.",
 		)
 		// Not returning early allows the logic to collect all errors.
@@ -121,24 +125,24 @@ func (p *NeosyncProvider) Configure(ctx context.Context, req provider.ConfigureR
 		httpclient,
 		endpoint,
 	)
-
 	if apiToken != "" && accountId == "" {
 		// retrieve account id from an RPC method that allows to retrieve account ids...
-		apiclient := mgmtv1alpha1connect.NewApiKeyServiceClient(httpclient, endpoint)
-		// todo: check if this is even possible to do today
-		apiResp, err := apiclient.GetAccountApiKey(ctx, connect.NewRequest(&mgmtv1alpha1.GetAccountApiKeyRequest{Id: apiToken}))
-		if err != nil {
-			resp.Diagnostics.AddError("account id error", err.Error())
-			return
-		}
-		accountId = apiResp.Msg.ApiKey.AccountId
+		// apiclient := mgmtv1alpha1connect.NewApiKeyServiceClient(httpclient, endpoint)
+		// // todo: check if this is even possible to do today
+		// apiResp, err := apiclient.GetAccountApiKey(ctx, connect.NewRequest(&mgmtv1alpha1.GetAccountApiKeyRequest{Id: apiToken}))
+		// if err != nil {
+		// 	resp.Diagnostics.AddError("account id error", err.Error())
+		// 	return
+		// }
+		// accountId = apiResp.Msg.ApiKey.AccountId
 		// userclient := mgmtv1alpha1connect.NewUserAccountServiceClient(httpclient, endpoint)
 		// accResp, err := userclient.GetUserAccounts(ctx, connect.NewRequest(&mgmtv1alpha1.GetUserAccountsRequest{}))
 		// if err != nil {
 		// 	resp.Diagnostics.AddError("user account error", err.Error())
 		// 	return
 		// }
-		// if len()
+		resp.Diagnostics.AddError("must provide account id", "currently not possible to derive account id purely from api token")
+		return
 	}
 
 	configData := &ConfigData{

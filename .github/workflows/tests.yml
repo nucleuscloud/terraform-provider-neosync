@@ -83,5 +83,6 @@ jobs:
           TF_ACC: "1"
           NEOSYNC_ENDPOINT: ${{ vars.NEOSYNC_ENDPOINT }}
           NEOSYNC_API_TOKEN: ${{ secrets.NEOSYNC_API_TOKEN }}
+          NEOSYNC_ACCOUNT_ID: ${{ var.NEOSYNC_ACCOUNT_ID }}
         run: go test -v -cover ./internal/provider/
         timeout-minutes: 10

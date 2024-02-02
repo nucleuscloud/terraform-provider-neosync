@@ -17,11 +17,11 @@ var testAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServe
 }
 
 func testAccPreCheck(t *testing.T) {
-	mustHaveEnv(t, "NEOSYNC_ENDPOINT")
-	if os.Getenv("NEOSYNC_API_TOKEN") == "" {
-		mustHaveEnv(t, "NEOSYNC_ACCOUNT_ID")
+	mustHaveEnv(t, endpointEnvVarKey)
+	if os.Getenv(apiTokenEnvVarKey) == "" {
+		mustHaveEnv(t, accountIdEnvVarKey)
 	} else {
-		mustHaveEnv(t, "NEOSYNC_API_TOKEN")
+		mustHaveEnv(t, apiTokenEnvVarKey)
 	}
 	// You can add code here to run prior to any test case execution, for example assertions
 	// about the appropriate environment variables being set are common to see in a pre-check
