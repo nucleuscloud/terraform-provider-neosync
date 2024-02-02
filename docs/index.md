@@ -19,7 +19,7 @@ description: |-
 terraform {
   required_providers {
     neosync = {
-      source  = "neosync/neosync"
+      source  = "nucleuscloud/neosync"
       version = "~> 0.1"
     }
   }
