@@ -43,16 +43,16 @@ func (p *NeosyncProvider) Schema(ctx context.Context, req provider.SchemaRequest
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"endpoint": schema.StringAttribute{
-				MarkdownDescription: "The URL to the backend Neosync API server",
-				Optional:            true,
+				Description: "The URL to the backend Neosync API server",
+				Optional:    true,
 			},
 			"api_token": schema.StringAttribute{
-				MarkdownDescription: "The account-level API token that will be used to authenticate with the API server",
-				Optional:            true,
+				Description: "The account-level API token that will be used to authenticate with the API server",
+				Optional:    true,
 			},
 			"account_id": schema.StringAttribute{
-				MarkdownDescription: "The account id that should be associated with this provider and any resources that utilize it",
-				Optional:            true,
+				Description: "The account id that should be associated with this provider and any resources that utilize it",
+				Optional:    true,
 			},
 		},
 	}

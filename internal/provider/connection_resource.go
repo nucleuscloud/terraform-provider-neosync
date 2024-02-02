@@ -67,18 +67,18 @@ func (r *ConnectionResource) Metadata(ctx context.Context, req resource.Metadata
 func (r *ConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "Example resource",
+		Description: "Example resource",
 
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
-				MarkdownDescription: "The unique friendly name of the connection",
-				Required:            true,
+				Description: "The unique friendly name of the connection",
+				Required:    true,
 			},
 			"account_id": schema.StringAttribute{
-				MarkdownDescription: "The unique identifier of the account. Can be pulled from the API Key if present, or must be specified if using a user access token",
-				Optional:            true,
-				Computed:            true,
-				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
+				Description:   "The unique identifier of the account. Can be pulled from the API Key if present, or must be specified if using a user access token",
+				Optional:      true,
+				Computed:      true,
+				PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			},
 			"postgres": schema.SingleNestedAttribute{
 				Description: "The postgres database that will be associated with this connection",
@@ -152,8 +152,8 @@ func (r *ConnectionResource) Schema(ctx context.Context, req resource.SchemaRequ
 				},
 			},
 			"id": schema.StringAttribute{
-				Computed:            true,
-				MarkdownDescription: "The unique identifier of the connection",
+				Computed:    true,
+				Description: "The unique identifier of the connection",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplaceIfConfigured(),

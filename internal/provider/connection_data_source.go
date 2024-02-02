@@ -37,16 +37,16 @@ func (d *ConnectionDataSource) Metadata(ctx context.Context, req datasource.Meta
 func (d *ConnectionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "Neosync Connection data source",
+		Description: "Neosync Connection data source",
 
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
-				MarkdownDescription: "The unique name of the connection",
-				Computed:            true,
+				Description: "The unique name of the connection",
+				Computed:    true,
 			},
 			"id": schema.StringAttribute{
-				MarkdownDescription: "The unique identifier of the connection",
-				Required:            true,
+				Description: "The unique identifier of the connection",
+				Required:    true,
 			},
 		},
 	}
