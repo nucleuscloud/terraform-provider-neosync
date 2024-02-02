@@ -1,30 +1,34 @@
 package provider
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAcc_Connection_Postgres_Url(t *testing.T) {
-	const testAccConnectionConfig = `
+	connectionName := acctest.RandString(10)
+
+	testAccConnectionConfig := fmt.Sprintf(`
 resource "neosync_connection" "test1" {
-  name = "foo"
+  name = "%s"
 
 	postgres = {
 		url = "test-url"
 	}
 }
-`
-	const testAccConnectionConfigUpdated = `
+`, connectionName)
+	testAccConnectionConfigUpdated := fmt.Sprintf(`
 resource "neosync_connection" "test1" {
-  name = "foo"
+  name = "%s"
 
 	postgres = {
 		url = "test-url2"
 	}
 }
-`
+`, connectionName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -34,7 +38,7 @@ resource "neosync_connection" "test1" {
 				Config: testAccConnectionConfig,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("neosync_connection.test1", "id"),
-					resource.TestCheckResourceAttr("neosync_connection.test1", "name", "foo"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "name", connectionName),
 					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.url", "test-url"),
 				),
 			},
@@ -49,9 +53,11 @@ resource "neosync_connection" "test1" {
 }
 
 func TestAcc_Connection_Postgres_Connection(t *testing.T) {
-	const testAccConnectionConfig = `
+	connectionName := acctest.RandString(10)
+
+	testAccConnectionConfig := fmt.Sprintf(`
 resource "neosync_connection" "test1" {
-  name = "foo"
+  name = "%s"
 
 	postgres = {
 		host = "test-url"
@@ -71,10 +77,10 @@ resource "neosync_connection" "test1" {
 		}
 	}
 }
-`
-	const testAccConnectionConfigUpdated = `
+`, connectionName)
+	testAccConnectionConfigUpdated := fmt.Sprintf(`
 resource "neosync_connection" "test1" {
-  name = "foo"
+  name = "%s"
 
 	postgres = {
 		host = "test-url"
@@ -94,7 +100,7 @@ resource "neosync_connection" "test1" {
 		}
 	}
 }
-`
+`, connectionName)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -104,7 +110,7 @@ resource "neosync_connection" "test1" {
 				Config: testAccConnectionConfig,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("neosync_connection.test1", "id"),
-					resource.TestCheckResourceAttr("neosync_connection.test1", "name", "foo"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "name", connectionName),
 					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.host", "test-url"),
 					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.port", "5432"),
 					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.name", "neosync"),
