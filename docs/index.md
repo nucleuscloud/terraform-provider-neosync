@@ -18,15 +18,15 @@ description: |-
 # changes occurring unannounced.
 terraform {
   required_providers {
-    vercel = {
+    neosync = {
       source  = "neosync/neosync"
-      version = "~> 0.3"
+      version = "~> 0.1"
     }
   }
 }
 
 provider "neosync" {
-  # Or omirt this for the endpoint to be read
+  # Or omit this for the endpoint to be read
   # from the NEOSYNC_ENDPOINT environment variable
   endpoint = var.neosync_endpoint
 
