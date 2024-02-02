@@ -16,7 +16,6 @@ var testAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServe
 	"neosync": providerserver.NewProtocol6WithError(New("test")()),
 }
 
-// nolint
 func testAccPreCheck(t *testing.T) {
 	mustHaveEnv(t, "NEOSYNC_ENDPOINT")
 	if os.Getenv("NEOSYNC_API_TOKEN") == "" {

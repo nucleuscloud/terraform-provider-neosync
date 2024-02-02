@@ -72,7 +72,6 @@ func (d *ConnectionDataSource) Configure(ctx context.Context, req datasource.Con
 	d.client = providerData.ConnectionClient
 }
 
-// nolint
 func (d *ConnectionDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data ConnectionDataSourceModel
 

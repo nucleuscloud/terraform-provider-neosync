@@ -305,7 +305,6 @@ func getConnectionConfigFromResourceModel(data *ConnectionResourceModel) (*mgmtv
 	return nil, errors.New("invalid connection config")
 }
 
-// nolint
 func (r *ConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data ConnectionResourceModel
 
@@ -363,7 +362,6 @@ func (r *ConnectionResource) Create(ctx context.Context, req resource.CreateRequ
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-// nolint
 func (r *ConnectionResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var data ConnectionResourceModel
 
@@ -397,7 +395,6 @@ func (r *ConnectionResource) Read(ctx context.Context, req resource.ReadRequest,
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-// nolint
 func (r *ConnectionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var data ConnectionResourceModel
 
@@ -440,7 +437,6 @@ func (r *ConnectionResource) Update(ctx context.Context, req resource.UpdateRequ
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-// nolint
 func (r *ConnectionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var data ConnectionResourceModel
 

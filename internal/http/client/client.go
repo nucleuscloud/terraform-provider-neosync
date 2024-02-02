@@ -2,7 +2,7 @@ package http_client
 
 import "net/http"
 
-// Returns a new http client that will send headers along with the request
+// Returns a new http client that will send headers along with the request.
 func NewWithHeaders(
 	headers map[string]string,
 ) *http.Client {

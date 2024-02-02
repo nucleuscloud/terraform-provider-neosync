@@ -1,6 +1,7 @@
 package http_client
 
 import (
+	"errors"
 	"net/http"
 	"testing"
 
@@ -62,5 +63,13 @@ type mockRoundTripper struct {
 
 func (m *mockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	args := m.Called(req)
-	return args.Get(0).(*http.Response), args.Error(1)
+	err := args.Error(1)
+	if err != nil {
+		return nil, err
+	}
+	resp, ok := args.Get(0).(*http.Response)
+	if !ok {
+		return nil, errors.New("Expected *http.Response, got: %T. Please report this issue to the provider developers.")
+	}
+	return resp, nil
 }

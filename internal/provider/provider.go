@@ -17,7 +17,7 @@ import (
 	http_client "github.com/nucleuscloud/terraform-provider-neosync/internal/http/client"
 )
 
-// Ensure NeosyncProvider satisfies various provider inferfaces
+// Ensure NeosyncProvider satisfies various provider inferfaces.
 var _ provider.Provider = &NeosyncProvider{}
 
 type NeosyncProvider struct {
