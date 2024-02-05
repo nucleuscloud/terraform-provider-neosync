@@ -43,3 +43,26 @@ resource "neosync_connection" "private_db" {
     }
   }
 }
+
+# Mysql connection with tunnel
+resource "neosync_connection" "private_mysql_db" {
+  name = "private-mysql"
+
+  mysql = {
+    host     = "my-private-db.example.com"
+    port     = 3306
+    name     = "mysql"
+    user     = "mysql"
+    pass     = "mysql"
+    protocol = "tcp"
+
+    tunnel = {
+      host                  = "bastion.example.com"
+      port                  = 22
+      user                  = "test"
+      known_host_public_key = "123"
+      private_key           = "my-private-key"
+      passphrase            = "test"
+    }
+  }
+}
