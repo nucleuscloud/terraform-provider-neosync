@@ -157,6 +157,7 @@ func (p *NeosyncProvider) Configure(ctx context.Context, req provider.ConfigureR
 func (p *NeosyncProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewConnectionResource,
+		NewJobResource,
 	}
 }
 
