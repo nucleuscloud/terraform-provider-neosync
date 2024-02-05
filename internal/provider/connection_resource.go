@@ -34,6 +34,7 @@ type ConnectionResourceModel struct {
 	AccountId types.String `tfsdk:"account_id"`
 
 	Postgres *Postgres `tfsdk:"postgres"`
+	Mysql    *Mysql    `tfsdk:"mysql"`
 }
 
 type Postgres struct {
@@ -45,6 +46,19 @@ type Postgres struct {
 	User    types.String `tfsdk:"user"`
 	Pass    types.String `tfsdk:"pass"`
 	SslMode types.String `tfsdk:"ssl_mode"`
+
+	Tunnel *SSHTunnel `tfsdk:"tunnel"`
+}
+
+type Mysql struct {
+	Url types.String `tfsdk:"url"`
+
+	Host     types.String `tfsdk:"host"`
+	Port     types.Int64  `tfsdk:"port"`
+	Name     types.String `tfsdk:"name"`
+	User     types.String `tfsdk:"user"`
+	Pass     types.String `tfsdk:"pass"`
+	Protocol types.String `tfsdk:"protocol"`
 
 	Tunnel *SSHTunnel `tfsdk:"tunnel"`
 }
@@ -62,6 +76,41 @@ type SSHTunnel struct {
 func (r *ConnectionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_connection"
 }
+
+var (
+	tunnelSchema = schema.SingleNestedAttribute{
+		Description: "SSH tunnel that is used to access databases that are not publicly accessible to the internet",
+		Optional:    true,
+		Attributes: map[string]schema.Attribute{
+			"host": schema.StringAttribute{
+				Description: "The host name of the server",
+				Required:    true,
+			},
+			"port": schema.Int64Attribute{
+				Description: "The post of the ssh server",
+				Required:    true,
+			},
+			"user": schema.StringAttribute{
+				Description: "The name of the user that will be authenticated with",
+				Required:    true,
+			},
+			"known_host_public_key": schema.StringAttribute{
+				Description: "The known SSH public key of the tunnel server.",
+				Optional:    true,
+			},
+			"private_key": schema.StringAttribute{
+				Description: "If using key authentication, this must be a pem encoded private key",
+				Optional:    true,
+				Sensitive:   true,
+			},
+			"passphrase": schema.StringAttribute{
+				Description: "If not using key authentication, a password must be provided. If a private key is provided, but encrypted, provide the passphrase here as it will be used to decrypt the private key",
+				Optional:    true,
+				Sensitive:   true,
+			},
+		},
+	}
+)
 
 func (r *ConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
@@ -94,7 +143,7 @@ func (r *ConnectionResource) Schema(ctx context.Context, req resource.SchemaRequ
 						Optional:    true,
 					},
 					"port": schema.Int64Attribute{
-						Description: "The post of the postgres server",
+						Description: "The port of the postgres server",
 						Optional:    true,
 						// Default:     int64default.StaticInt64(5432),
 					},
@@ -115,39 +164,45 @@ func (r *ConnectionResource) Schema(ctx context.Context, req resource.SchemaRequ
 						Description: "The SSL mode for the postgres server",
 						Optional:    true,
 					},
-					"tunnel": schema.SingleNestedAttribute{
-						Description: "SSH tunnel that is used to access databases that are not publicly accessible to the internet",
+					"tunnel": tunnelSchema,
+				},
+			},
+			"mysql": schema.SingleNestedAttribute{
+				Description: "The mysql database that will be associated with this connection",
+				Optional:    true,
+				// PlanModifiers: []planmodifier.Object{objectplanmodifier.UseStateForUnknown()},
+				Attributes: map[string]schema.Attribute{
+					"url": schema.StringAttribute{
+						Description: "Standard mysql url connection string.",
 						Optional:    true,
-						Attributes: map[string]schema.Attribute{
-							"host": schema.StringAttribute{
-								Description: "The host name of the server",
-								Required:    true,
-							},
-							"port": schema.Int64Attribute{
-								Description: "The post of the ssh server",
-								Required:    true,
-								// Default:     int64default.StaticInt64(22),
-							},
-							"user": schema.StringAttribute{
-								Description: "The name of the user that will be authenticated with",
-								Required:    true,
-							},
-							"known_host_public_key": schema.StringAttribute{
-								Description: "The known SSH public key of the tunnel server.",
-								Optional:    true,
-							},
-							"private_key": schema.StringAttribute{
-								Description: "If using key authentication, this must be a pem encoded private key",
-								Optional:    true,
-								Sensitive:   true,
-							},
-							"passphrase": schema.StringAttribute{
-								Description: "If not using key authentication, a password must be provided. If a private key is provided, but encrypted, provide the passphrase here as it will be used to decrypt the private key",
-								Optional:    true,
-								Sensitive:   true,
-							},
-						},
 					},
+
+					"host": schema.StringAttribute{
+						Description: "The host name of the mysql server",
+						Optional:    true,
+					},
+					"port": schema.Int64Attribute{
+						Description: "The port of the mysql server",
+						Optional:    true,
+					},
+					"name": schema.StringAttribute{
+						Description: "The name of the database that will be connected to",
+						Optional:    true,
+					},
+					"user": schema.StringAttribute{
+						Description: "The name of the user that will be authenticated with",
+						Optional:    true,
+					},
+					"pass": schema.StringAttribute{
+						Description: "The password that will be authenticated with",
+						Optional:    true,
+						Sensitive:   true,
+					},
+					"protocol": schema.StringAttribute{
+						Description: "The protocol of the mysql server",
+						Optional:    true,
+					},
+					"tunnel": tunnelSchema,
 				},
 			},
 			"id": schema.StringAttribute{
@@ -232,6 +287,28 @@ func hydrateResourceModelFromConnectionConfig(cc *mgmtv1alpha1.ConnectionConfig,
 		default:
 			return errors.New("unable to find a config to hydrate connection resource model")
 		}
+	case *mgmtv1alpha1.ConnectionConfig_MysqlConfig:
+		switch mycc := config.MysqlConfig.ConnectionConfig.(type) {
+		case *mgmtv1alpha1.MysqlConnectionConfig_Connection:
+			data.Mysql = &Mysql{
+				Host:     types.StringValue(mycc.Connection.Host),
+				Port:     types.Int64Value(int64(mycc.Connection.Port)),
+				Name:     types.StringValue(mycc.Connection.Name),
+				User:     types.StringValue(mycc.Connection.User),
+				Pass:     types.StringValue(mycc.Connection.Pass),
+				Protocol: types.StringValue(mycc.Connection.Protocol),
+				Tunnel:   hydrateTunnelFromTunnelConfig(config.MysqlConfig.Tunnel),
+			}
+			return nil
+		case *mgmtv1alpha1.MysqlConnectionConfig_Url:
+			data.Mysql = &Mysql{
+				Url:    types.StringValue(mycc.Url),
+				Tunnel: hydrateTunnelFromTunnelConfig(config.MysqlConfig.Tunnel),
+			}
+			return nil
+		default:
+			return errors.New("unable to findconfig to hydrate connection resource model")
+		}
 	default:
 		return errors.New("unable to find a config to hydrate connection resource model")
 	}
@@ -301,6 +378,69 @@ func getConnectionConfigFromResourceModel(data *ConnectionResourceModel) (*mgmtv
 			}, nil
 		}
 	}
+	if data.Mysql != nil {
+		var tunnel *mgmtv1alpha1.SSHTunnel
+		if data.Mysql.Tunnel != nil {
+			tunnel = &mgmtv1alpha1.SSHTunnel{
+				Host:               data.Mysql.Tunnel.Host.ValueString(),
+				Port:               int32(data.Mysql.Tunnel.Port.ValueInt64()),
+				User:               data.Mysql.Tunnel.User.ValueString(),
+				KnownHostPublicKey: data.Mysql.Tunnel.KnownHostPublicKey.ValueStringPointer(),
+			}
+			if data.Mysql.Tunnel.PrivateKey.ValueString() != "" {
+				tunnel.Authentication = &mgmtv1alpha1.SSHAuthentication{
+					AuthConfig: &mgmtv1alpha1.SSHAuthentication_PrivateKey{
+						PrivateKey: &mgmtv1alpha1.SSHPrivateKey{
+							Value:      data.Mysql.Tunnel.PrivateKey.ValueString(),
+							Passphrase: data.Mysql.Tunnel.Passphrase.ValueStringPointer(),
+						},
+					},
+				}
+			} else if data.Mysql.Tunnel.Passphrase.ValueString() != "" {
+				tunnel.Authentication = &mgmtv1alpha1.SSHAuthentication{
+					AuthConfig: &mgmtv1alpha1.SSHAuthentication_Passphrase{
+						Passphrase: &mgmtv1alpha1.SSHPassphrase{
+							Value: data.Mysql.Tunnel.Passphrase.ValueString(),
+						},
+					},
+				}
+			}
+		}
+		if data.Mysql.Url.ValueString() != "" {
+			return &mgmtv1alpha1.ConnectionConfig{
+				Config: &mgmtv1alpha1.ConnectionConfig_MysqlConfig{
+					MysqlConfig: &mgmtv1alpha1.MysqlConnectionConfig{
+						ConnectionConfig: &mgmtv1alpha1.MysqlConnectionConfig_Url{
+							Url: data.Mysql.Url.ValueString(),
+						},
+						Tunnel: tunnel,
+					},
+				},
+			}, nil
+		} else {
+			mysql := data.Mysql
+			if mysql.Host.ValueString() == "" || mysql.Port.ValueInt64() == 0 || mysql.Name.ValueString() == "" || mysql.User.ValueString() == "" || mysql.Pass.ValueString() == "" || mysql.Protocol.ValueString() == "" {
+				return nil, fmt.Errorf("invalid mysql config")
+			}
+			return &mgmtv1alpha1.ConnectionConfig{
+				Config: &mgmtv1alpha1.ConnectionConfig_MysqlConfig{
+					MysqlConfig: &mgmtv1alpha1.MysqlConnectionConfig{
+						ConnectionConfig: &mgmtv1alpha1.MysqlConnectionConfig_Connection{
+							Connection: &mgmtv1alpha1.MysqlConnection{
+								Host:     mysql.Host.ValueString(),
+								Port:     int32(mysql.Port.ValueInt64()),
+								Name:     mysql.Name.ValueString(),
+								User:     mysql.User.ValueString(),
+								Pass:     mysql.Pass.ValueString(),
+								Protocol: mysql.Protocol.ValueString(),
+							},
+						},
+						Tunnel: tunnel,
+					},
+				},
+			}, nil
+		}
+	}
 	return nil, errors.New("invalid connection config")
 }
 
@@ -334,7 +474,7 @@ func (r *ConnectionResource) Create(ctx context.Context, req resource.CreateRequ
 	}
 	connResp, err := r.client.CreateConnection(ctx, connect.NewRequest(&mgmtv1alpha1.CreateConnectionRequest{
 		Name:             data.Name.ValueString(),
-		AccountId:        accountId, // compute account id
+		AccountId:        accountId,
 		ConnectionConfig: cc,
 	}))
 	if err != nil {
