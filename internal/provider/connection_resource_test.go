@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAcc_Connection_Postgres_Url(t *testing.T) {
@@ -133,4 +134,65 @@ resource "neosync_connection" "test1" {
 			},
 		},
 	})
+}
+
+func TestAcc_Connection_Import(t *testing.T) {
+	connectionName := acctest.RandString(10)
+	testAccConnectionConfig := fmt.Sprintf(`
+resource "neosync_connection" "test1" {
+  name = "%s"
+
+	postgres = {
+		host = "test-url"
+		port = 5432
+		name = "neosync"
+		user = "postgres"
+		pass = "postgres123"
+		ssl_mode = "disable"
+
+		tunnel = {
+			host = "localhost"
+			port = 22
+			user = "test"
+			known_host_public_key = "123"
+			private_key = "my-private-key"
+			passphrase = "test"
+		}
+	}
+}
+`, connectionName)
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccConnectionConfig,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("neosync_connection.test1", "id"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "name", connectionName),
+				),
+			},
+			{
+				ResourceName:      "neosync_connection.test1",
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: getPrimaryImportId("neosync_connection.test1"),
+			},
+		},
+	})
+}
+
+func getPrimaryImportId(n string) resource.ImportStateIdFunc {
+	return func(s *terraform.State) (string, error) {
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return "", fmt.Errorf("not found: %s", n)
+		}
+
+		if rs.Primary.ID == "" {
+			return "", fmt.Errorf("no ID is set")
+		}
+
+		return rs.Primary.ID, nil
+	}
 }

@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"connectrpc.com/connect"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -459,6 +458,31 @@ func (r *ConnectionResource) Delete(ctx context.Context, req resource.DeleteRequ
 }
 
 func (r *ConnectionResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
-	// todo
+	if req.ID == "" {
+		resp.Diagnostics.AddError("Unable to import", "must provide ID")
+		return
+	}
+
+	connResp, err := r.client.GetConnection(ctx, connect.NewRequest(&mgmtv1alpha1.GetConnectionRequest{
+		Id: req.ID,
+	}))
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to get connection", err.Error())
+		return
+	}
+
+	connection := connResp.Msg.Connection
+
+	var data ConnectionResourceModel
+	data.Id = types.StringValue(connection.Id)
+	data.Name = types.StringValue(connection.Name)
+	data.AccountId = types.StringValue(connection.AccountId)
+	err = hydrateResourceModelFromConnectionConfig(connection.ConnectionConfig, &data)
+	if err != nil {
+		resp.Diagnostics.AddError("connection config hydration error", err.Error())
+		return
+	}
+
+	// Save updated data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
