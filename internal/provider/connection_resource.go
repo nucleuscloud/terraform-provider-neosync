@@ -259,6 +259,7 @@ func (r *ConnectionResource) Schema(ctx context.Context, req resource.SchemaRequ
 							"secret_access_key": schema.StringAttribute{
 								Description: "The AWS secret access key",
 								Optional:    true,
+								Sensitive:   true,
 							},
 							"session_token": schema.StringAttribute{
 								Description: "The AWS session token",
