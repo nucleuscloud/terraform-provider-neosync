@@ -13,11 +13,10 @@ import (
 // CLI command executed to create a provider server to which the CLI can
 // reattach.
 var testAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
-	"neosync": providerserver.NewProtocol6WithError(New("test", "localhost:8080")()),
+	"neosync": providerserver.NewProtocol6WithError(New("test", "http://localhost:8080")()),
 }
 
 func testAccPreCheck(t *testing.T) {
-	mustHaveEnv(t, endpointEnvVarKey)
 	if os.Getenv(apiTokenEnvVarKey) == "" {
 		mustHaveEnv(t, accountIdEnvVarKey)
 	} else {

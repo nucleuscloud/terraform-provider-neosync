@@ -6,11 +6,13 @@ import (
 	"net/http"
 	"os"
 
+	"connectrpc.com/connect"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	mgmtv1alpha1 "github.com/nucleuscloud/neosync/backend/gen/go/protos/mgmt/v1alpha1"
 	"github.com/nucleuscloud/neosync/backend/gen/go/protos/mgmt/v1alpha1/mgmtv1alpha1connect"
 	http_client "github.com/nucleuscloud/terraform-provider-neosync/internal/http/client"
 )
@@ -114,9 +116,6 @@ func (p *NeosyncProvider) Configure(ctx context.Context, req provider.ConfigureR
 		return
 	}
 
-	// Configuration values are now available.
-
-	// Example client configuration for data sources and resources
 	httpclient := http.DefaultClient
 	if apiToken != "" {
 		httpclient = http_client.NewWithHeaders(
@@ -129,23 +128,18 @@ func (p *NeosyncProvider) Configure(ctx context.Context, req provider.ConfigureR
 		endpoint,
 	)
 	if apiToken != "" && accountId == "" {
-		// retrieve account id from an RPC method that allows to retrieve account ids...
-		// apiclient := mgmtv1alpha1connect.NewApiKeyServiceClient(httpclient, endpoint)
-		// // todo: check if this is even possible to do today
-		// apiResp, err := apiclient.GetAccountApiKey(ctx, connect.NewRequest(&mgmtv1alpha1.GetAccountApiKeyRequest{Id: apiToken}))
-		// if err != nil {
-		// 	resp.Diagnostics.AddError("account id error", err.Error())
-		// 	return
-		// }
-		// accountId = apiResp.Msg.ApiKey.AccountId
-		// userclient := mgmtv1alpha1connect.NewUserAccountServiceClient(httpclient, endpoint)
-		// accResp, err := userclient.GetUserAccounts(ctx, connect.NewRequest(&mgmtv1alpha1.GetUserAccountsRequest{}))
-		// if err != nil {
-		// 	resp.Diagnostics.AddError("user account error", err.Error())
-		// 	return
-		// }
-		resp.Diagnostics.AddError("must provide account id", "currently not possible to derive account id purely from api token")
-		return
+		userclient := mgmtv1alpha1connect.NewUserAccountServiceClient(httpclient, endpoint)
+		userAccountsResp, err := userclient.GetUserAccounts(ctx, connect.NewRequest(&mgmtv1alpha1.GetUserAccountsRequest{}))
+		if err != nil {
+			resp.Diagnostics.AddError("user account error", err.Error())
+			return
+		}
+		accounts := userAccountsResp.Msg.Accounts
+		if len(accounts) == 0 {
+			resp.Diagnostics.AddError("user account error", "unable to find any accounts associated with provided api token")
+			return
+		}
+		accountId = accounts[0].Id
 	}
 
 	configData := &ConfigData{
