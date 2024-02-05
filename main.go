@@ -25,7 +25,7 @@ var (
 	version string = "dev"
 	// this is replaced by goreleaser during build time and is only used
 	// if no value is provided to the provider in terraform or via the environment.
-	defaultEndpoint string = "localhost:8080"
+	defaultEndpoint string = "http://localhost:8080"
 
 	// goreleaser can pass other information to the main package, such as the specific commit
 	// https://goreleaser.com/cookbooks/using-main.version/
