@@ -24,7 +24,6 @@ type ConnectionDataSource struct {
 	client mgmtv1alpha1connect.ConnectionServiceClient
 }
 
-// ExampleDataSourceModel describes the data source data model.
 type ConnectionDataSourceModel struct {
 	Name types.String `tfsdk:"name"`
 	Id   types.String `tfsdk:"id"`
@@ -36,7 +35,6 @@ func (d *ConnectionDataSource) Metadata(ctx context.Context, req datasource.Meta
 
 func (d *ConnectionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		// This description is used by the documentation generator and the language server.
 		Description: "Neosync Connection data source",
 
 		Attributes: map[string]schema.Attribute{
