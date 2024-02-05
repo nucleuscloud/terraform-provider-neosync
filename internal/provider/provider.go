@@ -25,7 +25,8 @@ const (
 var _ provider.Provider = &NeosyncProvider{}
 
 type NeosyncProvider struct {
-	version string
+	version         string
+	defaultEndpoint string
 }
 
 type NeosyncProviderModel struct {
@@ -81,6 +82,9 @@ func (p *NeosyncProvider) Configure(ctx context.Context, req provider.ConfigureR
 	if data.Endpoint.ValueString() != "" {
 		endpoint = data.Endpoint.ValueString()
 	}
+	if endpoint == "" {
+		endpoint = p.defaultEndpoint
+	}
 
 	if data.AccountId.ValueString() != "" {
 		accountId = data.AccountId.ValueString()
@@ -111,7 +115,6 @@ func (p *NeosyncProvider) Configure(ctx context.Context, req provider.ConfigureR
 	}
 
 	// Configuration values are now available.
-	// if data.Endpoint.IsNull() { /* ... */ }
 
 	// Example client configuration for data sources and resources
 	httpclient := http.DefaultClient
@@ -168,10 +171,11 @@ func (p *NeosyncProvider) DataSources(ctx context.Context) []func() datasource.D
 	}
 }
 
-func New(version string) func() provider.Provider {
+func New(version string, defaultEndpoint string) func() provider.Provider {
 	return func() provider.Provider {
 		return &NeosyncProvider{
-			version: version,
+			version:         version,
+			defaultEndpoint: defaultEndpoint,
 		}
 	}
 }

@@ -33,3 +33,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
+          DEFAULT_ENDPOINT: ${{ vars.DEFAULT_NEOSYNC_ENDPOINT }}
