@@ -35,6 +35,25 @@ type ConnectionResourceModel struct {
 
 	Postgres *Postgres `tfsdk:"postgres"`
 	Mysql    *Mysql    `tfsdk:"mysql"`
+	AwsS3    *AwsS3    `tfsdk:"aws_s3"`
+}
+
+type AwsS3 struct {
+	Bucket      types.String    `tfsdk:"bucket"`
+	PathPrefix  types.String    `tfsdk:"path_prefix"`
+	Region      types.String    `tfsdk:"region"`
+	Endpoint    types.String    `tfsdk:"endpoint"`
+	Credentials *AwsCredentials `tfsdk:"credentials"`
+}
+
+type AwsCredentials struct {
+	Profile         types.String `tfsdk:"profile"`
+	AccessKeyId     types.String `tfsdk:"access_key_id"`
+	SecretAccessKey types.String `tfsdk:"secret_access_key"`
+	SessionToken    types.String `tfsdk:"session_token"`
+	FromEc2Role     types.Bool   `tfsdk:"from_ec2_role"`
+	RoleArn         types.String `tfsdk:"role_arn"`
+	RoleExternalId  types.String `tfsdk:"role_external_id"`
 }
 
 type Postgres struct {
@@ -205,6 +224,64 @@ func (r *ConnectionResource) Schema(ctx context.Context, req resource.SchemaRequ
 					"tunnel": tunnelSchema,
 				},
 			},
+			"aws_s3": schema.SingleNestedAttribute{
+				Description: "The aws s3 bucket that will be associated with this connection",
+				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"bucket": schema.StringAttribute{
+						Description: "The name of the S3 bucket",
+						Required:    true,
+					},
+					"path_prefix": schema.StringAttribute{
+						Description: "The folder within the bucket that the connection will be scoped to",
+						Optional:    true,
+					},
+					"region": schema.StringAttribute{
+						Description: "The region that will be used by the SDK to access the bucket",
+						Optional:    true,
+					},
+					"endpoint": schema.StringAttribute{
+						Description: "The endpoint that will be used by the SDK to access the bucket",
+						Optional:    true,
+					},
+					"credentials": schema.SingleNestedAttribute{
+						Description: "Credentials that may be necessary to access the S3 bucket in a R/W fashion",
+						Optional:    true,
+						Attributes: map[string]schema.Attribute{
+							"profile": schema.StringAttribute{
+								Description: "The profile found in the ~/.aws/config that can be used to access credentials",
+								Optional:    true,
+							},
+							"access_key_id": schema.StringAttribute{
+								Description: "The AWS access key id",
+								Optional:    true,
+							},
+							"secret_access_key": schema.StringAttribute{
+								Description: "The AWS secret access key",
+								Optional:    true,
+								Sensitive:   true,
+							},
+							"session_token": schema.StringAttribute{
+								Description: "The AWS session token",
+								Optional:    true,
+							},
+							"from_ec2_role": schema.BoolAttribute{
+								Description: "Will result in the sync operations pulling from the EC2 role",
+								Optional:    true,
+							},
+							"role_arn": schema.StringAttribute{
+								Description: "The role arn that can be assumed",
+								Optional:    true,
+							},
+							"role_external_id": schema.StringAttribute{
+								Description: "The external id that will be provided when the role arn is assumed",
+								Optional:    true,
+							},
+						},
+					},
+				},
+			},
+
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "The unique identifier of the connection",
@@ -309,9 +386,35 @@ func hydrateResourceModelFromConnectionConfig(cc *mgmtv1alpha1.ConnectionConfig,
 		default:
 			return errors.New("unable to findconfig to hydrate connection resource model")
 		}
+	case *mgmtv1alpha1.ConnectionConfig_AwsS3Config:
+		data.AwsS3 = &AwsS3{
+			Bucket:     types.StringValue(config.AwsS3Config.Bucket),
+			PathPrefix: types.StringPointerValue(config.AwsS3Config.PathPrefix),
+			Region:     types.StringPointerValue(config.AwsS3Config.Region),
+			Endpoint:   types.StringPointerValue(config.AwsS3Config.Endpoint),
+		}
+		if !isAwsCredentialsEmpty(config.AwsS3Config.Credentials) {
+			data.AwsS3.Credentials = &AwsCredentials{}
+			data.AwsS3.Credentials.Profile = types.StringPointerValue(config.AwsS3Config.Credentials.Profile)
+			data.AwsS3.Credentials.AccessKeyId = types.StringPointerValue(config.AwsS3Config.Credentials.AccessKeyId)
+			data.AwsS3.Credentials.SecretAccessKey = types.StringPointerValue(config.AwsS3Config.Credentials.SecretAccessKey)
+			data.AwsS3.Credentials.SessionToken = types.StringPointerValue(config.AwsS3Config.Credentials.SessionToken)
+			data.AwsS3.Credentials.FromEc2Role = types.BoolPointerValue(config.AwsS3Config.Credentials.FromEc2Role)
+			data.AwsS3.Credentials.RoleArn = types.StringPointerValue(config.AwsS3Config.Credentials.RoleArn)
+			data.AwsS3.Credentials.RoleExternalId = types.StringPointerValue(config.AwsS3Config.Credentials.RoleExternalId)
+		}
+		return nil
 	default:
 		return errors.New("unable to find a config to hydrate connection resource model")
 	}
+}
+
+func isAwsCredentialsEmpty(creds *mgmtv1alpha1.AwsS3Credentials) bool {
+	if creds == nil {
+		return true
+	}
+	return creds.Profile == nil && creds.AccessKeyId == nil && creds.SecretAccessKey == nil && creds.SessionToken == nil &&
+		creds.FromEc2Role == nil && creds.RoleArn == nil && creds.RoleExternalId == nil
 }
 
 func getConnectionConfigFromResourceModel(data *ConnectionResourceModel) (*mgmtv1alpha1.ConnectionConfig, error) {
@@ -440,6 +543,31 @@ func getConnectionConfigFromResourceModel(data *ConnectionResourceModel) (*mgmtv
 				},
 			}, nil
 		}
+	}
+	if data.AwsS3 != nil {
+		var creds *mgmtv1alpha1.AwsS3Credentials
+		if data.AwsS3.Credentials != nil {
+			creds = &mgmtv1alpha1.AwsS3Credentials{
+				Profile:         data.AwsS3.Credentials.Profile.ValueStringPointer(),
+				AccessKeyId:     data.AwsS3.Credentials.AccessKeyId.ValueStringPointer(),
+				SecretAccessKey: data.AwsS3.Credentials.SecretAccessKey.ValueStringPointer(),
+				SessionToken:    data.AwsS3.Credentials.SessionToken.ValueStringPointer(),
+				FromEc2Role:     data.AwsS3.Credentials.FromEc2Role.ValueBoolPointer(),
+				RoleArn:         data.AwsS3.Credentials.RoleArn.ValueStringPointer(),
+				RoleExternalId:  data.AwsS3.Credentials.RoleExternalId.ValueStringPointer(),
+			}
+		}
+		return &mgmtv1alpha1.ConnectionConfig{
+			Config: &mgmtv1alpha1.ConnectionConfig_AwsS3Config{
+				AwsS3Config: &mgmtv1alpha1.AwsS3ConnectionConfig{
+					Bucket:      data.AwsS3.Bucket.ValueString(),
+					PathPrefix:  data.AwsS3.PathPrefix.ValueStringPointer(),
+					Region:      data.AwsS3.Region.ValueStringPointer(),
+					Endpoint:    data.AwsS3.Endpoint.ValueStringPointer(),
+					Credentials: creds,
+				},
+			},
+		}, nil
 	}
 	return nil, errors.New("invalid connection config")
 }

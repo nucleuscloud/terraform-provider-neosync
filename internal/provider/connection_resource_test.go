@@ -67,6 +67,65 @@ resource "neosync_connection" "test1" {
 		user = "postgres"
 		pass = "postgres123"
 		ssl_mode = "disable"
+	}
+}
+`, connectionName)
+	testAccConnectionConfigUpdated := fmt.Sprintf(`
+resource "neosync_connection" "test1" {
+  name = "%s"
+
+	postgres = {
+		host = "test-url"
+		port = 5432
+		name = "neosync"
+		user = "postgres"
+		pass = "postgres1234"
+		ssl_mode = "disable"
+	}
+}
+`, connectionName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccConnectionConfig,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("neosync_connection.test1", "id"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "name", connectionName),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.host", "test-url"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.port", "5432"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.name", "neosync"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.user", "postgres"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.pass", "postgres123"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.ssl_mode", "disable"),
+				),
+			},
+			{
+				Config: testAccConnectionConfigUpdated,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.pass", "postgres1234"),
+				),
+			},
+		},
+	})
+}
+
+func TestAcc_Connection_Postgres_Connection_Tunnel(t *testing.T) {
+	connectionName := acctest.RandString(10)
+
+	testAccConnectionConfig := fmt.Sprintf(`
+resource "neosync_connection" "test1" {
+  name = "%s"
+
+	postgres = {
+		host = "test-url"
+		port = 5432
+		name = "neosync"
+		user = "postgres"
+		pass = "postgres123"
+		ssl_mode = "disable"
 
 		tunnel = {
 			host = "localhost"
@@ -303,6 +362,117 @@ resource "neosync_connection" "test1" {
 				Config: testAccConnectionConfigUpdated,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.tunnel.known_host_public_key", "111"),
+				),
+			},
+		},
+	})
+}
+
+func TestAcc_Connection_AwsS3_Connection(t *testing.T) {
+	connectionName := acctest.RandString(10)
+
+	testAccConnectionConfig := fmt.Sprintf(`
+resource "neosync_connection" "test1" {
+  name = "%s"
+
+	aws_s3 = {
+		bucket = "my-bucket"
+		path_prefix = "/neosync"
+		region = "us-west-2"
+		endpoint = "https://my-local-s3-instance"
+
+		credentials = {
+			profile = "default"
+			access_key_id = "123"
+			secret_access_key = "456"
+			session_token = "fake-session"
+			from_ec2_role = true
+			role_arn = "my-role"
+			role_external_id = "111"
+		}
+	}
+}
+`, connectionName)
+	testAccConnectionConfigUpdated := fmt.Sprintf(`
+resource "neosync_connection" "test1" {
+  name = "%s"
+
+	aws_s3 = {
+		bucket = "my-bucket"
+		path_prefix = "/neosync123"
+		region = "us-west-2"
+		endpoint = "https://my-local-s3-instance"
+
+		credentials = {
+			profile = "default"
+			access_key_id = "222"
+			secret_access_key = "456"
+			session_token = "fake-session"
+			from_ec2_role = true
+			role_arn = "my-role"
+			role_external_id = "111"
+		}
+	}
+}
+`, connectionName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccConnectionConfig,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("neosync_connection.test1", "id"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "name", connectionName),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "aws_s3.bucket", "my-bucket"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "aws_s3.path_prefix", "/neosync"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "aws_s3.region", "us-west-2"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "aws_s3.endpoint", "https://my-local-s3-instance"),
+
+					resource.TestCheckResourceAttr("neosync_connection.test1", "aws_s3.credentials.profile", "default"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "aws_s3.credentials.access_key_id", "123"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "aws_s3.credentials.secret_access_key", "456"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "aws_s3.credentials.session_token", "fake-session"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "aws_s3.credentials.from_ec2_role", "true"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "aws_s3.credentials.role_arn", "my-role"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "aws_s3.credentials.role_external_id", "111"),
+				),
+			},
+			{
+				Config: testAccConnectionConfigUpdated,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("neosync_connection.test1", "aws_s3.path_prefix", "/neosync123"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "aws_s3.credentials.access_key_id", "222"),
+				),
+			},
+		},
+	})
+}
+
+func TestAcc_Connection_AwsS3_Connection_Bucket_Only(t *testing.T) {
+	connectionName := acctest.RandString(10)
+
+	testAccConnectionConfig := fmt.Sprintf(`
+resource "neosync_connection" "test1" {
+  name = "%s"
+
+	aws_s3 = {
+		bucket = "my-bucket"
+	}
+}
+`, connectionName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccConnectionConfig,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("neosync_connection.test1", "id"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "name", connectionName),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "aws_s3.bucket", "my-bucket"),
 				),
 			},
 		},

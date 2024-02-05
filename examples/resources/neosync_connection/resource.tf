@@ -66,3 +66,13 @@ resource "neosync_connection" "private_mysql_db" {
     }
   }
 }
+
+# AWS S3 Connection
+resource "neosync_connection" "job_bucket" {
+  name = "stage-backups"
+
+  aws_s3 = {
+    bucket      = "my-company-bucket"
+    path_prefix = "/neosync"
+  }
+}
