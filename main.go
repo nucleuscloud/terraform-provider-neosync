@@ -23,6 +23,9 @@ var (
 	// these will be set by the goreleaser configuration
 	// to appropriate values for the compiled binary.
 	version string = "dev"
+	// this is replaced by goreleaser during build time and is only used
+	// if no value is provided to the provider in terraform or via the environment
+	defaultEndpoint string = "localhost:8080"
 
 	// goreleaser can pass other information to the main package, such as the specific commit
 	// https://goreleaser.com/cookbooks/using-main.version/
@@ -35,12 +38,11 @@ func main() {
 	flag.Parse()
 
 	opts := providerserver.ServeOpts{
-		// TODO: Update this string with the published name of your provider.
-		Address: "registry.terraform.io/neosync/neosync",
+		Address: "registry.terraform.io/nucleuscloud/neosync",
 		Debug:   debug,
 	}
 
-	err := providerserver.Serve(context.Background(), provider.New(version), opts)
+	err := providerserver.Serve(context.Background(), provider.New(version, defaultEndpoint), opts)
 
 	if err != nil {
 		log.Fatal(err.Error())

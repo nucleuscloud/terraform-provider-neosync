@@ -25,7 +25,8 @@ const (
 var _ provider.Provider = &NeosyncProvider{}
 
 type NeosyncProvider struct {
-	version string
+	version         string
+	defaultEndpoint string
 }
 
 type NeosyncProviderModel struct {
@@ -97,13 +98,7 @@ func (p *NeosyncProvider) Configure(ctx context.Context, req provider.ConfigureR
 	}
 
 	if endpoint == "" {
-		resp.Diagnostics.AddError(
-			"Missing Endpoint Configuration",
-			"While configuring the provider, the endpoint was not found in "+
-				fmt.Sprintf("the %s environment variable or provider ", endpointEnvVarKey)+
-				"configuration block endpoint attribute.",
-		)
-		// Not returning early allows the logic to collect all errors.
+		endpoint = p.defaultEndpoint
 	}
 
 	if resp.Diagnostics.HasError() {
@@ -111,7 +106,6 @@ func (p *NeosyncProvider) Configure(ctx context.Context, req provider.ConfigureR
 	}
 
 	// Configuration values are now available.
-	// if data.Endpoint.IsNull() { /* ... */ }
 
 	// Example client configuration for data sources and resources
 	httpclient := http.DefaultClient
@@ -168,10 +162,11 @@ func (p *NeosyncProvider) DataSources(ctx context.Context) []func() datasource.D
 	}
 }
 
-func New(version string) func() provider.Provider {
+func New(version string, defaultEndpoint string) func() provider.Provider {
 	return func() provider.Provider {
 		return &NeosyncProvider{
-			version: version,
+			version:         version,
+			defaultEndpoint: defaultEndpoint,
 		}
 	}
 }
