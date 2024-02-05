@@ -64,6 +64,7 @@ func (p *NeosyncProvider) Schema(ctx context.Context, req provider.SchemaRequest
 type ConfigData struct {
 	AccountId        *string
 	ConnectionClient mgmtv1alpha1connect.ConnectionServiceClient
+	JobClient        mgmtv1alpha1connect.JobServiceClient
 }
 
 func (p *NeosyncProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
@@ -162,6 +163,7 @@ func (p *NeosyncProvider) Resources(ctx context.Context) []func() resource.Resou
 func (p *NeosyncProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewConnectionDataSource,
+		NewJobDataSource,
 	}
 }
 

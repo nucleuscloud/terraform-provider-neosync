@@ -9,50 +9,48 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-
 	mgmtv1alpha1 "github.com/nucleuscloud/neosync/backend/gen/go/protos/mgmt/v1alpha1"
 	"github.com/nucleuscloud/neosync/backend/gen/go/protos/mgmt/v1alpha1/mgmtv1alpha1connect"
 )
 
-var _ datasource.DataSource = &ConnectionDataSource{}
+var _ datasource.DataSource = &JobDataSource{}
 
-func NewConnectionDataSource() datasource.DataSource {
-	return &ConnectionDataSource{}
+func NewJobDataSource() datasource.DataSource {
+	return &JobDataSource{}
 }
 
-type ConnectionDataSource struct {
-	client mgmtv1alpha1connect.ConnectionServiceClient
+type JobDataSource struct {
+	client mgmtv1alpha1connect.JobServiceClient
 }
 
-// ExampleDataSourceModel describes the data source data model.
-type ConnectionDataSourceModel struct {
-	Name types.String `tfsdk:"name"`
+type JobDataSourceModel struct {
 	Id   types.String `tfsdk:"id"`
+	Name types.String `tfsdk:"name"`
 }
 
-func (d *ConnectionDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_connection"
+func (d *JobDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_job"
 }
 
-func (d *ConnectionDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *JobDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		// This description is used by the documentation generator and the language server.
-		Description: "Neosync Connection data source",
+		Description: "Neosync Job data source",
 
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
-				Description: "The unique name of the connection",
+				Description: "The unique name of the job",
 				Computed:    true,
 			},
 			"id": schema.StringAttribute{
-				Description: "The unique identifier of the connection",
+				Description: "The unique identifier of the job",
 				Required:    true,
 			},
 		},
 	}
 }
 
-func (d *ConnectionDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *JobDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	// Prevent panic if the provider has not been configured.
 	if req.ProviderData == nil {
 		return
@@ -69,11 +67,11 @@ func (d *ConnectionDataSource) Configure(ctx context.Context, req datasource.Con
 		return
 	}
 
-	d.client = providerData.ConnectionClient
+	d.client = providerData.JobClient
 }
 
-func (d *ConnectionDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var data ConnectionDataSourceModel
+func (d *JobDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var data JobDataSourceModel
 
 	// Read Terraform configuration data into the model
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -82,16 +80,16 @@ func (d *ConnectionDataSource) Read(ctx context.Context, req datasource.ReadRequ
 		return
 	}
 
-	connResp, err := d.client.GetConnection(ctx, connect.NewRequest(&mgmtv1alpha1.GetConnectionRequest{
+	jobResp, err := d.client.GetJob(ctx, connect.NewRequest(&mgmtv1alpha1.GetJobRequest{
 		Id: data.Id.ValueString(),
 	}))
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to get connection by id", err.Error())
+		resp.Diagnostics.AddError("Unable to get job by id", err.Error())
 		return
 	}
 
-	data.Name = types.StringValue(connResp.Msg.Connection.Name)
-	tflog.Trace(ctx, "read connection", map[string]any{"id": data.Id.ValueString()})
+	data.Name = types.StringValue(jobResp.Msg.Job.Name)
+	tflog.Trace(ctx, "read job", map[string]any{"id": data.Id.ValueString()})
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
