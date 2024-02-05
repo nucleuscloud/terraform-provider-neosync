@@ -93,12 +93,42 @@ resource "neosync_connection" "private_mysql_db" {
 ### Optional
 
 - `account_id` (String) The unique identifier of the account. Can be pulled from the API Key if present, or must be specified if using a user access token
+- `aws_s3` (Attributes) The aws s3 bucket that will be associated with this connection (see [below for nested schema](#nestedatt--aws_s3))
 - `mysql` (Attributes) The mysql database that will be associated with this connection (see [below for nested schema](#nestedatt--mysql))
 - `postgres` (Attributes) The postgres database that will be associated with this connection (see [below for nested schema](#nestedatt--postgres))
 
 ### Read-Only
 
 - `id` (String) The unique identifier of the connection
+
+<a id="nestedatt--aws_s3"></a>
+### Nested Schema for `aws_s3`
+
+Required:
+
+- `bucket` (String) The name of the S3 bucket
+
+Optional:
+
+- `credentials` (Attributes) Credentials that may be necessary to access the S3 bucket in a R/W fashion (see [below for nested schema](#nestedatt--aws_s3--credentials))
+- `endpoint` (String) The endpoint that will be used by the SDK to access the bucket
+- `path_prefix` (String) The folder within the bucket that the connection will be scoped to
+- `region` (String) The region that will be used by the SDK to access the bucket
+
+<a id="nestedatt--aws_s3--credentials"></a>
+### Nested Schema for `aws_s3.credentials`
+
+Optional:
+
+- `access_key_id` (String) The AWS access key id
+- `from_ec2_role` (Boolean) Will result in the sync operations pulling from the EC2 role
+- `profile` (String) The profile found in the ~/.aws/config that can be used to access credentials
+- `role_arn` (String) The role arn that can be assumed
+- `role_external_id` (String) The external id that will be provided when the role arn is assumed
+- `secret_access_key` (String, Sensitive) The AWS secret access key
+- `session_token` (String) The AWS session token
+
+
 
 <a id="nestedatt--mysql"></a>
 ### Nested Schema for `mysql`
