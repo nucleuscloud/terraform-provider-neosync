@@ -82,6 +82,9 @@ func (p *NeosyncProvider) Configure(ctx context.Context, req provider.ConfigureR
 	if data.Endpoint.ValueString() != "" {
 		endpoint = data.Endpoint.ValueString()
 	}
+	if endpoint == "" {
+		endpoint = p.defaultEndpoint
+	}
 
 	if data.AccountId.ValueString() != "" {
 		accountId = data.AccountId.ValueString()
@@ -98,7 +101,13 @@ func (p *NeosyncProvider) Configure(ctx context.Context, req provider.ConfigureR
 	}
 
 	if endpoint == "" {
-		endpoint = p.defaultEndpoint
+		resp.Diagnostics.AddError(
+			"Missing Endpoint Configuration",
+			"While configuring the provider, the endpoint was not found in "+
+				fmt.Sprintf("the %s environment variable or provider ", endpointEnvVarKey)+
+				"configuration block endpoint attribute.",
+		)
+		// Not returning early allows the logic to collect all errors.
 	}
 
 	if resp.Diagnostics.HasError() {
