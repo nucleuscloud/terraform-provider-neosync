@@ -63,7 +63,7 @@ resource "neosync_connection" "private_db" {
 resource "neosync_connection" "private_mysql_db" {
   name = "private-mysql"
 
-  postgres = {
+  mysql = {
     host     = "my-private-db.example.com"
     port     = 3306
     name     = "mysql"
