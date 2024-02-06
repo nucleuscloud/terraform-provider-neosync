@@ -486,7 +486,7 @@ type JobSource struct {
 type JobSourcePostgresOptions struct {
 	HaltOnNewColumnAddition types.Bool                             `tfsdk:"halt_on_new_column_addition"`
 	ConnectionId            types.String                           `tfsdk:"connection_id"`
-	SchemaOptions           []*JobSourcePostgresSourceSchemaOption `tfsdk:"schema_options"`
+	SchemaOptions           []*JobSourcePostgresSourceSchemaOption `tfsdk:"schemas"`
 }
 type JobSourcePostgresSourceSchemaOption struct {
 	Schema types.String                          `tfsdk:"schema"`
@@ -500,7 +500,7 @@ type JobSourcePostgresSourceTableOption struct {
 type JobSourceMysqlOptions struct {
 	HaltOnNewColumnAddition types.Bool                          `tfsdk:"halt_on_new_column_addition"`
 	ConnectionId            types.String                        `tfsdk:"connection_id"`
-	SchemaOptions           []*JobSourceMysqlSourceSchemaOption `tfsdk:"schema_options"`
+	SchemaOptions           []*JobSourceMysqlSourceSchemaOption `tfsdk:"schemas"`
 }
 type JobSourceMysqlSourceSchemaOption struct {
 	Schema types.String                       `tfsdk:"schema"`
@@ -617,7 +617,7 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 								Description: "",
 								Required:    true,
 							},
-							"schema_options": schema.ListNestedAttribute{
+							"schemas": schema.ListNestedAttribute{
 								Description: "",
 								Optional:    true,
 								NestedObject: schema.NestedAttributeObject{
@@ -659,7 +659,7 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 								Description: "",
 								Required:    true,
 							},
-							"schema_options": schema.ListNestedAttribute{
+							"schemas": schema.ListNestedAttribute{
 								Description: "",
 								Optional:    true,
 								NestedObject: schema.NestedAttributeObject{
@@ -703,11 +703,11 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 						Description: "",
 						Optional:    true,
 						Attributes: map[string]schema.Attribute{
-							"connection_id": schema.StringAttribute{
+							"fk_source_connection_id": schema.StringAttribute{
 								Description: "",
 								Required:    true,
 							},
-							"schema_options": schema.ListNestedAttribute{
+							"schemas": schema.ListNestedAttribute{
 								Description: "",
 								Required:    true,
 								NestedObject: schema.NestedAttributeObject{
