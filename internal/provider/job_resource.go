@@ -117,6 +117,38 @@ func fromModelDestinationsToCreate(input []*JobDestination) ([]*mgmtv1alpha1.Cre
 
 	return output, nil
 }
+func fromModelDestinations(input []*JobDestination) ([]*mgmtv1alpha1.JobDestination, error) {
+	output := []*mgmtv1alpha1.JobDestination{}
+
+	for _, jd := range input {
+		cjd := &mgmtv1alpha1.JobDestination{
+			Id:           jd.Id.ValueString(),
+			ConnectionId: jd.ConnectionId.ValueString(),
+			Options:      &mgmtv1alpha1.JobDestinationOptions{},
+		}
+		if jd.Postgres != nil {
+			var truncateTable *mgmtv1alpha1.PostgresTruncateTableConfig
+			if jd.Postgres.TruncateTable != nil {
+				truncateTable = &mgmtv1alpha1.PostgresTruncateTableConfig{
+					TruncateBeforeInsert: jd.Postgres.TruncateTable.TruncateBeforeInsert.ValueBool(),
+					Cascade:              jd.Postgres.TruncateTable.Cascade.ValueBool(),
+				}
+			}
+			cjd.Options.Config = &mgmtv1alpha1.JobDestinationOptions_PostgresOptions{
+				PostgresOptions: &mgmtv1alpha1.PostgresDestinationConnectionOptions{
+					InitTableSchema: jd.Postgres.InitTableSchema.ValueBool(),
+					TruncateTable:   truncateTable,
+				},
+			}
+		} else {
+			return nil, fmt.Errorf("the provided job destination type is not currently supported by this provider: %w", errors.ErrUnsupported)
+		}
+
+		output = append(output, cjd)
+	}
+
+	return output, nil
+}
 
 // nolint
 func fromModelSyncOptions(input *ActivityOptions) (*mgmtv1alpha1.ActivityOptions, error) {
@@ -753,39 +785,123 @@ func (r *JobResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 }
 
 func (r *JobResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data JobResourceModel
+	var planModel JobResourceModel
 
 	// Read Terraform plan data into the model
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
-
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &planModel)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// connResp, err := r.client.UpdateConnection(ctx, connect.NewRequest(&mgmtv1alpha1.UpdateConnectionRequest{
-	// 	Id:               data.Id.ValueString(),
-	// 	Name:             data.Name.ValueString(),
-	// 	ConnectionConfig: cc,
-	// }))
-	// if err != nil {
-	// 	resp.Diagnostics.AddError("Unable to update connection", err.Error())
-	// 	return
-	// }
+	var stateModel JobResourceModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &stateModel)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-	// connection := connResp.Msg.Connection
+	if planModel.CronSchedule.ValueString() != stateModel.CronSchedule.ValueString() {
+		_, err := r.client.UpdateJobSchedule(ctx, connect.NewRequest(&mgmtv1alpha1.UpdateJobScheduleRequest{
+			Id:           planModel.Id.ValueString(),
+			CronSchedule: planModel.CronSchedule.ValueStringPointer(),
+		}))
+		if err != nil {
+			resp.Diagnostics.AddError("unable to update cron schedule", err.Error())
+			return
+		}
+	}
+	_, err := r.client.UpdateJobSourceConnection(ctx, connect.NewRequest(&mgmtv1alpha1.UpdateJobSourceConnectionRequest{
+		Id:       planModel.Id.ValueString(),
+		Source:   nil,
+		Mappings: nil,
+	}))
+	if err != nil {
+		resp.Diagnostics.AddError("unable to update job source connection", err.Error())
+		return
+	}
+	destinationsToCreate := []*JobDestination{}
+	destinationsToUpdate := []*JobDestination{}
+	destinationsToDelete := []*JobDestination{}
 
-	// data.Id = types.StringValue(connection.Id)
-	// data.Name = types.StringValue(connection.Name)
-	// data.AccountId = types.StringValue(connection.AccountId)
-	// err = hydrateResourceModelFromConnectionConfig(connection.ConnectionConfig, &data)
-	// if err != nil {
-	// 	resp.Diagnostics.AddError("connection config hydration error", err.Error())
-	// 	return
-	// }
+	stateDestinationsMap := map[string]*JobDestination{}
+	for _, dst := range stateModel.Destinations {
+		stateDestinationsMap[dst.Id.ValueString()] = dst
+	}
+
+	for _, dst := range planModel.Destinations {
+		if dst.Id.IsUnknown() {
+			destinationsToCreate = append(destinationsToCreate, dst)
+			continue
+		}
+		if _, ok := stateDestinationsMap[dst.Id.ValueString()]; !ok {
+			destinationsToDelete = append(destinationsToDelete, dst)
+			continue
+		}
+		destinationsToUpdate = append(destinationsToUpdate, dst) // should do work here to see if it has actually changed at all
+	}
+
+	if len(destinationsToCreate) > 0 {
+		dsts, err := fromModelDestinationsToCreate(destinationsToCreate)
+		if err != nil {
+			resp.Diagnostics.AddError("unable to model new destinations to create", err.Error())
+			return
+		}
+		_, err = r.client.CreateJobDestinationConnections(ctx, connect.NewRequest(&mgmtv1alpha1.CreateJobDestinationConnectionsRequest{
+			JobId:        planModel.Id.ValueString(),
+			Destinations: dsts,
+		}))
+		if err != nil {
+			resp.Diagnostics.AddError("unable to create job destination connections", err.Error())
+			return
+		}
+	}
+	if len(destinationsToDelete) > 0 {
+		for _, jd := range destinationsToDelete {
+			_, err = r.client.DeleteJobDestinationConnection(ctx, connect.NewRequest(&mgmtv1alpha1.DeleteJobDestinationConnectionRequest{
+				DestinationId: jd.Id.ValueString(),
+			}))
+			if err != nil {
+				resp.Diagnostics.AddError("unable to delete job destination connection", err.Error())
+				return
+			}
+		}
+	}
+	if len(destinationsToUpdate) > 0 {
+		jds, err := fromModelDestinations(destinationsToUpdate)
+		if err != nil {
+			resp.Diagnostics.AddError("unable to model destinations to update", err.Error())
+			return
+		}
+		for _, jd := range jds {
+			_, err = r.client.UpdateJobDestinationConnection(ctx, connect.NewRequest(&mgmtv1alpha1.UpdateJobDestinationConnectionRequest{
+				DestinationId: jd.Id,
+				JobId:         planModel.Id.ValueString(),
+				ConnectionId:  jd.ConnectionId,
+				Options:       jd.Options,
+			}))
+			if err != nil {
+				resp.Diagnostics.AddError("unable to update job destination connection", err.Error())
+				return
+			}
+		}
+	}
+
+	getResp, err := r.client.GetJob(ctx, connect.NewRequest(&mgmtv1alpha1.GetJobRequest{
+		Id: planModel.Id.ValueString(),
+	}))
+	if err != nil {
+		resp.Diagnostics.AddError("unable to get updated job model", err.Error())
+		return
+	}
+
+	updatedModel, err := fromJobDto(getResp.Msg.Job)
+	if err != nil {
+		resp.Diagnostics.AddError("unable to model latest job dto", err.Error())
+		return
+	}
 
 	tflog.Trace(ctx, "updated job")
 	// Save updated data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &updatedModel)...)
 }
 
 func (r *JobResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
