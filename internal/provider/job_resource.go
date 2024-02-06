@@ -419,9 +419,139 @@ func fromJobDto(dto *mgmtv1alpha1.Job) (*JobResourceModel, error) {
 	}
 	for _, dtoMapping := range dto.Mappings {
 		tconfig := &TransformerConfig{}
-		switch dtoMapping.Transformer.Config.Config.(type) {
+		switch config := dtoMapping.Transformer.Config.Config.(type) {
+		case *mgmtv1alpha1.TransformerConfig_GenerateEmailConfig:
+			tconfig.GenerateEmail = &TransformerEmpty{}
+		case *mgmtv1alpha1.TransformerConfig_TransformEmailConfig:
+			tconfig.TransformEmail = &TransformEmail{}
+		case *mgmtv1alpha1.TransformerConfig_GenerateBoolConfig:
+			tconfig.GenerateBool = &TransformerEmpty{}
+		case *mgmtv1alpha1.TransformerConfig_GenerateCardNumberConfig:
+			tconfig.GenerateCardNumber = &GenerateCardNumber{
+				ValidLuhn: types.BoolValue(config.GenerateCardNumberConfig.ValidLuhn),
+			}
+		case *mgmtv1alpha1.TransformerConfig_GenerateCityConfig:
+			tconfig.GenerateCity = &TransformerEmpty{}
+		case *mgmtv1alpha1.TransformerConfig_GenerateE164PhoneNumberConfig:
+			tconfig.GenerateE164PhoneNumber = &GenerateE164PhoneNumber{
+				Min: types.Int64Value(config.GenerateE164PhoneNumberConfig.Min),
+				Max: types.Int64Value(config.GenerateE164PhoneNumberConfig.Max),
+			}
+		case *mgmtv1alpha1.TransformerConfig_GenerateFirstNameConfig:
+			tconfig.GenerateFirstName = &TransformerEmpty{}
+		case *mgmtv1alpha1.TransformerConfig_GenerateFloat64Config:
+			tconfig.GenerateFloat64 = &GenerateFloat64{
+				RandomizeSign: types.BoolValue(config.GenerateFloat64Config.RandomizeSign),
+				Min:           types.Float64Value(config.GenerateFloat64Config.Min),
+				Max:           types.Float64Value(config.GenerateFloat64Config.Max),
+				Precision:     types.Int64Value(config.GenerateFloat64Config.Precision),
+			}
+		case *mgmtv1alpha1.TransformerConfig_GenerateFullAddressConfig:
+			tconfig.GenerateFullAddress = &TransformerEmpty{}
+		case *mgmtv1alpha1.TransformerConfig_GenerateFullNameConfig:
+			tconfig.GenerateFullName = &TransformerEmpty{}
+		case *mgmtv1alpha1.TransformerConfig_GenerateGenderConfig:
+			tconfig.GenerateGender = &GenerateGender{
+				Abbreviate: types.BoolValue(config.GenerateGenderConfig.Abbreviate),
+			}
+		case *mgmtv1alpha1.TransformerConfig_GenerateInt64PhoneNumberConfig:
+			tconfig.GenerateInt64PhoneNumber = &TransformerEmpty{}
+		case *mgmtv1alpha1.TransformerConfig_GenerateInt64Config:
+			tconfig.GenerateInt64 = &GenerateInt64{
+				RandomizeSign: types.BoolValue(config.GenerateInt64Config.RandomizeSign),
+				Min:           types.Int64Value(config.GenerateInt64Config.Min),
+				Max:           types.Int64Value(config.GenerateInt64Config.Max),
+			}
+		case *mgmtv1alpha1.TransformerConfig_GenerateLastNameConfig:
+			tconfig.GenerateLastName = &TransformerEmpty{}
+		case *mgmtv1alpha1.TransformerConfig_GenerateSha256HashConfig:
+			tconfig.GenerateSha256Hash = &TransformerEmpty{}
+		case *mgmtv1alpha1.TransformerConfig_GenerateSsnConfig:
+			tconfig.GenerateSsn = &TransformerEmpty{}
+		case *mgmtv1alpha1.TransformerConfig_GenerateStateConfig:
+			tconfig.GenerateState = &TransformerEmpty{}
+		case *mgmtv1alpha1.TransformerConfig_GenerateStreetAddressConfig:
+			tconfig.GenerateStreetAddress = &TransformerEmpty{}
+		case *mgmtv1alpha1.TransformerConfig_GenerateStringPhoneNumberConfig:
+			tconfig.GenerateStringPhoneNumber = &GenerateStringPhoneNumber{
+				IncludeHyphens: types.BoolValue(config.GenerateStringPhoneNumberConfig.IncludeHyphens),
+			}
+		case *mgmtv1alpha1.TransformerConfig_GenerateStringConfig:
+			tconfig.GenerateString = &GenerateString{
+				Min: types.Int64Value(config.GenerateStringConfig.Min),
+				Max: types.Int64Value(config.GenerateStringConfig.Max),
+			}
+		case *mgmtv1alpha1.TransformerConfig_GenerateUnixtimestampConfig:
+			tconfig.GenerateUnixtimestamp = &TransformerEmpty{}
+		case *mgmtv1alpha1.TransformerConfig_GenerateUsernameConfig:
+			tconfig.GenerateUsername = &TransformerEmpty{}
+		case *mgmtv1alpha1.TransformerConfig_GenerateUtctimestampConfig:
+			tconfig.GenerateUtctimestamp = &TransformerEmpty{}
+		case *mgmtv1alpha1.TransformerConfig_GenerateUuidConfig:
+			tconfig.GenerateUuid = &GenerateUuid{
+				IncludeHyphens: types.BoolValue(config.GenerateUuidConfig.IncludeHyphens),
+			}
+		case *mgmtv1alpha1.TransformerConfig_GenerateZipcodeConfig:
+			tconfig.GenerateZipcode = &TransformerEmpty{}
+		case *mgmtv1alpha1.TransformerConfig_TransformE164PhoneNumberConfig:
+			tconfig.TransformE164PhoneNumber = &TransformE164PhoneNumber{
+				PreserveLength: types.BoolValue(config.TransformE164PhoneNumberConfig.PreserveLength),
+			}
+		case *mgmtv1alpha1.TransformerConfig_TransformFirstNameConfig:
+			tconfig.TransformFirstName = &TransformFirstName{
+				PreserveLength: types.BoolValue(config.TransformFirstNameConfig.PreserveLength),
+			}
+		case *mgmtv1alpha1.TransformerConfig_TransformFloat64Config:
+			tconfig.TransformFloat64 = &TransformFloat64{
+				RandomizationRangeMin: types.Float64Value(config.TransformFloat64Config.RandomizationRangeMin),
+				RandomizationRangeMax: types.Float64Value(config.TransformFloat64Config.RandomizationRangeMax),
+			}
+		case *mgmtv1alpha1.TransformerConfig_TransformFullNameConfig:
+			tconfig.TransformFullName = &TransformFullName{
+				PreserveLength: types.BoolValue(config.TransformFullNameConfig.PreserveLength),
+			}
+		case *mgmtv1alpha1.TransformerConfig_TransformInt64PhoneNumberConfig:
+			tconfig.TransformInt64PhoneNumber = &TransformInt64PhoneNumber{
+				PreserveLength: types.BoolValue(config.TransformInt64PhoneNumberConfig.PreserveLength),
+			}
+		case *mgmtv1alpha1.TransformerConfig_TransformInt64Config:
+			tconfig.TransformInt64 = &TransformInt64{
+				RandomizationRangeMin: types.Int64Value(config.TransformInt64Config.RandomizationRangeMin),
+				RandomizationRangeMax: types.Int64Value(config.TransformInt64Config.RandomizationRangeMax),
+			}
+		case *mgmtv1alpha1.TransformerConfig_TransformLastNameConfig:
+			tconfig.TransformLastName = &TransformLastName{
+				PreserveLength: types.BoolValue(config.TransformLastNameConfig.PreserveLength),
+			}
+		case *mgmtv1alpha1.TransformerConfig_TransformPhoneNumberConfig:
+			tconfig.TransformPhoneNumber = &TransformPhoneNumber{
+				PreserveLength: types.BoolValue(config.TransformPhoneNumberConfig.PreserveLength),
+				IncludeHyphens: types.BoolValue(config.TransformPhoneNumberConfig.IncludeHyphens),
+			}
+		case *mgmtv1alpha1.TransformerConfig_TransformStringConfig:
+			tconfig.TransformString = &TransformString{
+				PreserveLength: types.BoolValue(config.TransformStringConfig.PreserveLength),
+			}
 		case *mgmtv1alpha1.TransformerConfig_PassthroughConfig:
 			tconfig.Passthrough = &TransformerEmpty{}
+		case *mgmtv1alpha1.TransformerConfig_Nullconfig:
+			tconfig.Null = &TransformerEmpty{}
+		case *mgmtv1alpha1.TransformerConfig_UserDefinedTransformerConfig:
+			tconfig.UserDefinedTransformer = &UserDefinedTransformer{
+				Id: types.StringValue(config.UserDefinedTransformerConfig.Id),
+			}
+		case *mgmtv1alpha1.TransformerConfig_GenerateDefaultConfig:
+			tconfig.GenerateDefault = &TransformerEmpty{}
+		case *mgmtv1alpha1.TransformerConfig_TransformJavascriptConfig:
+			tconfig.TransformJavascript = &TransformJavascript{
+				Code: types.StringValue(config.TransformJavascriptConfig.Code),
+			}
+		case *mgmtv1alpha1.TransformerConfig_GenerateCategoricalConfig:
+			tconfig.GenerateCategorical = &GenerateCategorical{
+				Categories: types.StringValue(config.GenerateCategoricalConfig.Categories),
+			}
+		case *mgmtv1alpha1.TransformerConfig_TransformCharacterScrambleConfig:
+			tconfig.TransformCharacterScramble = &TransformerEmpty{}
 		default:
 			return nil, fmt.Errorf("this job mapping transformer is not currently supported by this provider: %w", errors.ErrUnsupported)
 		}
@@ -563,11 +693,125 @@ type Transformer struct {
 	Config *TransformerConfig `tfsdk:"config"`
 }
 
-// todo: maybe flatten this config to just live on the transformer
 type TransformerConfig struct {
-	Passthrough *TransformerEmpty `tfsdk:"passthrough"`
+	GenerateEmail              *TransformerEmpty          `tfsdk:"generate_email"`
+	TransformEmail             *TransformEmail            `tfsdk:"transform_email"`
+	GenerateBool               *TransformerEmpty          `tfsdk:"generate_bool"`
+	GenerateCardNumber         *GenerateCardNumber        `tfsdk:"generate_card_number"`
+	GenerateCity               *TransformerEmpty          `tfsdk:"generate_city"`
+	GenerateE164PhoneNumber    *GenerateE164PhoneNumber   `tfsdk:"generate_e164_phone_number"`
+	GenerateFirstName          *TransformerEmpty          `tfsdk:"generate_firstname"`
+	GenerateFloat64            *GenerateFloat64           `tfsdk:"generate_float64"`
+	GenerateFullAddress        *TransformerEmpty          `tfsdk:"generate_full_address"`
+	GenerateFullName           *TransformerEmpty          `tfsdk:"generate_fullname"`
+	GenerateGender             *GenerateGender            `tfsdk:"generate_gender"`
+	GenerateInt64PhoneNumber   *TransformerEmpty          `tfsdk:"generate_int64_phone_number"`
+	GenerateInt64              *GenerateInt64             `tfsdk:"generate_int64"`
+	GenerateLastName           *TransformerEmpty          `tfsdk:"generate_lastname"`
+	GenerateSha256Hash         *TransformerEmpty          `tfsdk:"generate_sha256"`
+	GenerateSsn                *TransformerEmpty          `tfsdk:"generate_ssn"`
+	GenerateState              *TransformerEmpty          `tfsdk:"generate_state"`
+	GenerateStreetAddress      *TransformerEmpty          `tfsdk:"generate_street_address"`
+	GenerateStringPhoneNumber  *GenerateStringPhoneNumber `tfsdk:"generate_string_phone_number"`
+	GenerateString             *GenerateString            `tfsdk:"generate_string"`
+	GenerateUnixtimestamp      *TransformerEmpty          `tfsdk:"generate_unix_timestamp"`
+	GenerateUsername           *TransformerEmpty          `tfsdk:"generate_username"`
+	GenerateUtctimestamp       *TransformerEmpty          `tfsdk:"generate_utc_timestamp"`
+	GenerateUuid               *GenerateUuid              `tfsdk:"generate_uuid"`
+	GenerateZipcode            *TransformerEmpty          `tfsdk:"generate_zipcode"`
+	TransformE164PhoneNumber   *TransformE164PhoneNumber  `tfsdk:"transform_e164_phone_number"`
+	TransformFirstName         *TransformFirstName        `tfsdk:"transform_firstname"`
+	TransformFloat64           *TransformFloat64          `tfsdk:"transform_float64"`
+	TransformFullName          *TransformFullName         `tfsdk:"transform_fullname"`
+	TransformInt64PhoneNumber  *TransformInt64PhoneNumber `tfsdk:"transform_int64_phone_number"`
+	TransformInt64             *TransformInt64            `tfsdk:"transform_int64"`
+	TransformLastName          *TransformLastName         `tfsdk:"transform_lastname"`
+	TransformPhoneNumber       *TransformPhoneNumber      `tfsdk:"transform_phone_number"`
+	TransformString            *TransformString           `tfsdk:"transform_string"`
+	Passthrough                *TransformerEmpty          `tfsdk:"passthrough"`
+	Null                       *TransformerEmpty          `tfsdk:"null"`
+	UserDefinedTransformer     *UserDefinedTransformer    `tfsdk:"user_defined_transformer"`
+	GenerateDefault            *TransformerEmpty          `tfsdk:"generate_default"`
+	TransformJavascript        *TransformJavascript       `tfsdk:"transform_javascript"`
+	GenerateCategorical        *GenerateCategorical       `tfsdk:"generate_categorical"`
+	TransformCharacterScramble *TransformerEmpty          `tfsdk:"transform_character_scramble"`
 }
 type TransformerEmpty struct{}
+type TransformEmail struct {
+	PreserveDomain types.Bool `tfsdk:"preserve_domain"`
+	PreserveLength types.Bool `tfsdk:"preserve_length"`
+}
+type GenerateCardNumber struct {
+	ValidLuhn types.Bool `tfsdk:"valid_luhn"`
+}
+type GenerateE164PhoneNumber struct {
+	Min types.Int64 `tfsdk:"min"`
+	Max types.Int64 `tfsdk:"max"`
+}
+type GenerateFloat64 struct {
+	RandomizeSign types.Bool    `tfsdk:"randomize_sign"`
+	Min           types.Float64 `tfsdk:"min"`
+	Max           types.Float64 `tfsdk:"max"`
+	Precision     types.Int64   `tfsdk:"precision"`
+}
+type GenerateGender struct {
+	Abbreviate types.Bool `tfsdk:"abbreviate"`
+}
+type GenerateInt64 struct {
+	RandomizeSign types.Bool  `tfsdk:"randomize_sign"`
+	Min           types.Int64 `tfsdk:"min"`
+	Max           types.Int64 `tfsdk:"max"`
+}
+type GenerateStringPhoneNumber struct {
+	IncludeHyphens types.Bool `tfsdk:"include_hyphens"`
+}
+type GenerateString struct {
+	Min types.Int64 `tfsdk:"min"`
+	Max types.Int64 `tfsdk:"max"`
+}
+type GenerateUuid struct {
+	IncludeHyphens types.Bool `tfsdk:"include_hyphens"`
+}
+type TransformE164PhoneNumber struct {
+	PreserveLength types.Bool `tfsdk:"preserve_length"`
+}
+type TransformFirstName struct {
+	PreserveLength types.Bool `tfsdk:"preserve_length"`
+}
+type TransformFloat64 struct {
+	RandomizationRangeMin types.Float64 `tfsdk:"randomization_range_min"`
+	RandomizationRangeMax types.Float64 `tfsdk:"randomization_range_max"`
+}
+type TransformFullName struct {
+	PreserveLength types.Bool `tfsdk:"preserve_length"`
+}
+type TransformInt64PhoneNumber struct {
+	PreserveLength types.Bool `tfsdk:"preserve_length"`
+}
+type TransformInt64 struct {
+	RandomizationRangeMin types.Int64 `tfsdk:"randomization_range_min"`
+	RandomizationRangeMax types.Int64 `tfsdk:"randomization_range_max"`
+}
+type TransformLastName struct {
+	PreserveLength types.Bool `tfsdk:"preserve_length"`
+}
+type TransformPhoneNumber struct {
+	PreserveLength types.Bool `tfsdk:"preserve_length"`
+	IncludeHyphens types.Bool `tfsdk:"include_hyphens"`
+}
+type TransformString struct {
+	PreserveLength types.Bool `tfsdk:"preserve_length"`
+}
+type TransformJavascript struct {
+	Code types.String `tfsdk:"code"`
+}
+type UserDefinedTransformer struct {
+	Id types.String `tfsdk:"id"`
+}
+type GenerateCategorical struct {
+	Categories types.String `tfsdk:"categories"`
+}
+
 type ActivityOptions struct {
 	ScheduleToCloseTimeout types.Int64  `tfsdk:"schedule_to_close_timeout"`
 	StartToCloseTimeout    types.Int64  `tfsdk:"start_to_close_timeout"`
