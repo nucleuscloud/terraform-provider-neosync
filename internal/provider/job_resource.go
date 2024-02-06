@@ -42,10 +42,6 @@ type JobResourceModel struct {
 	WorkflowOptions *WorkflowOptions  `tfsdk:"workflow_options"`
 }
 
-// func toJobDto(model *JobResourceModel) (*mgmtv1alpha1.Job, error) {
-// 	return nil, nil
-// }
-
 func toCreateJobDto(model *JobResourceModel) (*mgmtv1alpha1.CreateJobRequest, error) {
 	if model == nil {
 		return nil, errors.New("model was nil")
@@ -88,7 +84,6 @@ func toCreateJobDto(model *JobResourceModel) (*mgmtv1alpha1.CreateJobRequest, er
 
 func fromModelDestinationsToCreate(input []*JobDestination) ([]*mgmtv1alpha1.CreateJobDestination, error) {
 	output := []*mgmtv1alpha1.CreateJobDestination{}
-
 	for _, jd := range input {
 		cjd := &mgmtv1alpha1.CreateJobDestination{
 			ConnectionId: jd.ConnectionId.ValueString(),
@@ -108,35 +103,20 @@ func fromModelDestinationsToCreate(input []*JobDestination) ([]*mgmtv1alpha1.Cre
 					TruncateTable:   truncateTable,
 				},
 			}
-		} else {
-			return nil, fmt.Errorf("the provided job destination type is not currently supported by this provider: %w", errors.ErrUnsupported)
-		}
-
-		output = append(output, cjd)
-	}
-
-	return output, nil
-}
-func fromModelDestinations(input []*JobDestination) ([]*mgmtv1alpha1.JobDestination, error) {
-	output := []*mgmtv1alpha1.JobDestination{}
-
-	for _, jd := range input {
-		cjd := &mgmtv1alpha1.JobDestination{
-			Id:           jd.Id.ValueString(),
-			ConnectionId: jd.ConnectionId.ValueString(),
-			Options:      &mgmtv1alpha1.JobDestinationOptions{},
-		}
-		if jd.Postgres != nil {
-			var truncateTable *mgmtv1alpha1.PostgresTruncateTableConfig
-			if jd.Postgres.TruncateTable != nil {
-				truncateTable = &mgmtv1alpha1.PostgresTruncateTableConfig{
-					TruncateBeforeInsert: jd.Postgres.TruncateTable.TruncateBeforeInsert.ValueBool(),
-					Cascade:              jd.Postgres.TruncateTable.Cascade.ValueBool(),
+		} else if jd.AwsS3 != nil {
+			cjd.Options.Config = &mgmtv1alpha1.JobDestinationOptions_AwsS3Options{
+				AwsS3Options: &mgmtv1alpha1.AwsS3DestinationConnectionOptions{},
+			}
+		} else if jd.Mysql != nil {
+			var truncateTable *mgmtv1alpha1.MysqlTruncateTableConfig
+			if jd.Mysql.TruncateTable != nil {
+				truncateTable = &mgmtv1alpha1.MysqlTruncateTableConfig{
+					TruncateBeforeInsert: jd.Mysql.TruncateTable.TruncateBeforeInsert.ValueBool(),
 				}
 			}
-			cjd.Options.Config = &mgmtv1alpha1.JobDestinationOptions_PostgresOptions{
-				PostgresOptions: &mgmtv1alpha1.PostgresDestinationConnectionOptions{
-					InitTableSchema: jd.Postgres.InitTableSchema.ValueBool(),
+			cjd.Options.Config = &mgmtv1alpha1.JobDestinationOptions_MysqlOptions{
+				MysqlOptions: &mgmtv1alpha1.MysqlDestinationConnectionOptions{
+					InitTableSchema: jd.Mysql.InitTableSchema.ValueBool(),
 					TruncateTable:   truncateTable,
 				},
 			}
@@ -146,12 +126,27 @@ func fromModelDestinations(input []*JobDestination) ([]*mgmtv1alpha1.JobDestinat
 
 		output = append(output, cjd)
 	}
+	return output, nil
+}
+func fromModelDestinations(input []*JobDestination) ([]*mgmtv1alpha1.JobDestination, error) {
+	output := []*mgmtv1alpha1.JobDestination{}
 
+	cjds, err := fromModelDestinationsToCreate(input)
+	if err != nil {
+		return nil, err
+	}
+
+	for idx, jd := range input {
+		output = append(output, &mgmtv1alpha1.JobDestination{
+			Id:           jd.Id.ValueString(),
+			ConnectionId: cjds[idx].ConnectionId,
+			Options:      cjds[idx].Options,
+		})
+	}
 	return output, nil
 }
 
-// nolint
-func fromModelSyncOptions(input *ActivityOptions) (*mgmtv1alpha1.ActivityOptions, error) {
+func fromModelSyncOptions(input *ActivityOptions) (*mgmtv1alpha1.ActivityOptions, error) { //nolint
 	if input == nil {
 		return nil, nil
 	}
@@ -171,8 +166,7 @@ func fromModelSyncOptions(input *ActivityOptions) (*mgmtv1alpha1.ActivityOptions
 	return output, nil
 }
 
-// notlint
-func fromModelWorkflowOptions(input *WorkflowOptions) (*mgmtv1alpha1.WorkflowOptions, error) {
+func fromModelWorkflowOptions(input *WorkflowOptions) (*mgmtv1alpha1.WorkflowOptions, error) { //nolint
 	if input == nil {
 		return nil, nil
 	}
@@ -217,10 +211,58 @@ func fromModelJobSource(input *JobSource) (*mgmtv1alpha1.JobSource, error) {
 				Schemas:                 schemas,
 			},
 		}
+	} else if input.Mysql != nil {
+		schemas := []*mgmtv1alpha1.MysqlSourceSchemaOption{}
+		for _, schemaOpt := range input.Mysql.SchemaOptions {
+			tables := []*mgmtv1alpha1.MysqlSourceTableOption{}
+			for _, tableOpt := range schemaOpt.Tables {
+				tables = append(tables, &mgmtv1alpha1.MysqlSourceTableOption{
+					Table:       tableOpt.Table.ValueString(),
+					WhereClause: tableOpt.WhereClause.ValueStringPointer(),
+				})
+			}
+			schemas = append(schemas, &mgmtv1alpha1.MysqlSourceSchemaOption{
+				Schema: schemaOpt.Schema.ValueString(),
+				Tables: tables,
+			})
+		}
+		output.Options.Config = &mgmtv1alpha1.JobSourceOptions_Mysql{
+			Mysql: &mgmtv1alpha1.MysqlSourceConnectionOptions{
+				HaltOnNewColumnAddition: input.Mysql.HaltOnNewColumnAddition.ValueBool(),
+				ConnectionId:            input.Mysql.ConnectionId.ValueString(),
+				Schemas:                 schemas,
+			},
+		}
+	} else if input.AwsS3 != nil {
+		output.Options.Config = &mgmtv1alpha1.JobSourceOptions_AwsS3{
+			AwsS3: &mgmtv1alpha1.AwsS3SourceConnectionOptions{
+				ConnectionId: input.AwsS3.ConnectionId.ValueString(),
+			},
+		}
+	} else if input.Generate != nil {
+		schemas := []*mgmtv1alpha1.GenerateSourceSchemaOption{}
+		for _, schemaOpt := range input.Generate.Schemas {
+			tables := []*mgmtv1alpha1.GenerateSourceTableOption{}
+			for _, tableOpt := range schemaOpt.Tables {
+				tables = append(tables, &mgmtv1alpha1.GenerateSourceTableOption{
+					Table:    tableOpt.Table.ValueString(),
+					RowCount: tableOpt.RowCount.ValueInt64(),
+				})
+			}
+			schemas = append(schemas, &mgmtv1alpha1.GenerateSourceSchemaOption{
+				Schema: schemaOpt.Schema.ValueString(),
+				Tables: tables,
+			})
+		}
+		output.Options.Config = &mgmtv1alpha1.JobSourceOptions_Generate{
+			Generate: &mgmtv1alpha1.GenerateSourceOptions{
+				FkSourceConnectionId: input.Generate.FkSourceConnectionId.ValueStringPointer(),
+				Schemas:              schemas,
+			},
+		}
 	} else {
 		return nil, fmt.Errorf("the provided job source input is not currently supported by this provider: %w", errors.ErrUnsupported)
 	}
-
 	return output, nil
 }
 
@@ -291,7 +333,53 @@ func fromJobDto(dto *mgmtv1alpha1.Job) (*JobResourceModel, error) {
 		if len(schemaOpts) > 0 {
 			model.JobSource.Postgres.SchemaOptions = schemaOpts
 		}
-
+	case *mgmtv1alpha1.JobSourceOptions_Mysql:
+		model.JobSource.Mysql = &JobSourceMysqlOptions{
+			HaltOnNewColumnAddition: types.BoolValue(source.Mysql.HaltOnNewColumnAddition),
+			ConnectionId:            types.StringValue(source.Mysql.ConnectionId),
+		}
+		schemaOpts := []*JobSourceMysqlSourceSchemaOption{}
+		for _, dtoopt := range source.Mysql.Schemas {
+			opt := &JobSourceMysqlSourceSchemaOption{
+				Schema: types.StringValue(dtoopt.Schema),
+				Tables: []*JobSourceMysqlSourceTableOption{},
+			}
+			for _, schemaOpt := range dtoopt.Tables {
+				opt.Tables = append(opt.Tables, &JobSourceMysqlSourceTableOption{
+					Table:       types.StringValue(schemaOpt.Table),
+					WhereClause: types.StringPointerValue(schemaOpt.WhereClause),
+				})
+			}
+			schemaOpts = append(model.JobSource.Mysql.SchemaOptions, opt)
+		}
+		if len(schemaOpts) > 0 {
+			model.JobSource.Mysql.SchemaOptions = schemaOpts
+		}
+	case *mgmtv1alpha1.JobSourceOptions_Generate:
+		model.JobSource.Generate = &JobSourceGenerateOptions{
+			FkSourceConnectionId: types.StringPointerValue(source.Generate.FkSourceConnectionId),
+		}
+		schemaOpts := []*JobSourceGenerateSchemaOption{}
+		for _, dtoopt := range source.Generate.Schemas {
+			opt := &JobSourceGenerateSchemaOption{
+				Schema: types.StringValue(dtoopt.Schema),
+				Tables: []*JobSourceGenerateTableOption{},
+			}
+			for _, schemaOpt := range dtoopt.Tables {
+				opt.Tables = append(opt.Tables, &JobSourceGenerateTableOption{
+					Table:    types.StringValue(schemaOpt.Table),
+					RowCount: types.Int64Value(schemaOpt.RowCount),
+				})
+			}
+			schemaOpts = append(model.JobSource.Generate.Schemas, opt)
+		}
+		if len(schemaOpts) > 0 {
+			model.JobSource.Generate.Schemas = schemaOpts
+		}
+	case *mgmtv1alpha1.JobSourceOptions_AwsS3:
+		model.JobSource.AwsS3 = &JobSourceAwsS3Options{
+			ConnectionId: types.StringValue(source.AwsS3.ConnectionId),
+		}
 	default:
 		return nil, fmt.Errorf("this job source is not currently supported by this provider: %w", errors.ErrUnsupported)
 	}
@@ -312,7 +400,17 @@ func fromJobDto(dto *mgmtv1alpha1.Job) (*JobResourceModel, error) {
 					Cascade:              types.BoolValue(opt.PostgresOptions.TruncateTable.Cascade),
 				}
 			}
-
+		case *mgmtv1alpha1.JobDestinationOptions_AwsS3Options:
+			dest.AwsS3 = &JobDestinationAwsS3Options{}
+		case *mgmtv1alpha1.JobDestinationOptions_MysqlOptions:
+			dest.Mysql = &JobDestinationMysqlOptions{
+				InitTableSchema: types.BoolValue(opt.MysqlOptions.InitTableSchema),
+			}
+			if opt.MysqlOptions.TruncateTable != nil {
+				dest.Mysql.TruncateTable = &MysqlDestinationTruncateTable{
+					TruncateBeforeInsert: types.BoolValue(opt.MysqlOptions.TruncateTable.TruncateBeforeInsert),
+				}
+			}
 		default:
 			return nil, fmt.Errorf("this job dest is not currently supported by this provider: %w", errors.ErrUnsupported)
 		}
@@ -399,15 +497,40 @@ type JobSourcePostgresSourceTableOption struct {
 	WhereClause types.String `tfsdk:"where_clause"`
 }
 
-type JobSourceMysqlOptions struct{}
-type JobSourceGenerateOptions struct{}
-type JobSourceAwsS3Options struct{}
+type JobSourceMysqlOptions struct {
+	HaltOnNewColumnAddition types.Bool                          `tfsdk:"halt_on_new_column_addition"`
+	ConnectionId            types.String                        `tfsdk:"connection_id"`
+	SchemaOptions           []*JobSourceMysqlSourceSchemaOption `tfsdk:"schema_options"`
+}
+type JobSourceMysqlSourceSchemaOption struct {
+	Schema types.String                       `tfsdk:"schema"`
+	Tables []*JobSourceMysqlSourceTableOption `tfsdk:"tables"`
+}
+type JobSourceMysqlSourceTableOption struct {
+	Table       types.String `tfsdk:"table"`
+	WhereClause types.String `tfsdk:"where_clause"`
+}
+
+type JobSourceGenerateOptions struct {
+	Schemas              []*JobSourceGenerateSchemaOption `tfsdk:"schemas"`
+	FkSourceConnectionId types.String                     `tfsdk:"fk_source_connection_id"`
+}
+type JobSourceGenerateSchemaOption struct {
+	Schema types.String                    `tfsdk:"schema"`
+	Tables []*JobSourceGenerateTableOption `tfsdk:"tables"`
+}
+type JobSourceGenerateTableOption struct {
+	Table    types.String `tfsdk:"table"`
+	RowCount types.Int64  `tfsdk:"row_count"`
+}
+type JobSourceAwsS3Options struct {
+	ConnectionId types.String `tfsdk:"connection_id"`
+}
 
 type JobDestination struct {
 	Id           types.String `tfsdk:"id"`
 	ConnectionId types.String `tfsdk:"connection_id"`
 
-	// I think we need the Connection Id and Destination ID on here somewhere
 	Postgres *JobDestinationPostgresOptions `tfsdk:"postgres"`
 	Mysql    *JobDestinationMysqlOptions    `tfsdk:"mysql"`
 	AwsS3    *JobDestinationAwsS3Options    `tfsdk:"aws_s3"`
@@ -420,7 +543,13 @@ type PostgresDestinationTruncateTable struct {
 	TruncateBeforeInsert types.Bool `tfsdk:"truncate_before_insert"`
 	Cascade              types.Bool `tfsdk:"cascade"`
 }
-type JobDestinationMysqlOptions struct{}
+type JobDestinationMysqlOptions struct {
+	TruncateTable   *MysqlDestinationTruncateTable `tfsdk:"truncate_table"`
+	InitTableSchema types.Bool                     `tfsdk:"init_table_schema"`
+}
+type MysqlDestinationTruncateTable struct {
+	TruncateBeforeInsert types.Bool `tfsdk:"truncate_before_insert"`
+}
 type JobDestinationAwsS3Options struct{}
 
 type JobMapping struct {
@@ -521,14 +650,92 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 					"mysql": schema.SingleNestedAttribute{
 						Description: "",
 						Optional:    true,
+						Attributes: map[string]schema.Attribute{
+							"halt_on_new_column_addition": schema.BoolAttribute{
+								Description: "",
+								Required:    true,
+							},
+							"connection_id": schema.StringAttribute{
+								Description: "",
+								Required:    true,
+							},
+							"schema_options": schema.ListNestedAttribute{
+								Description: "",
+								Optional:    true,
+								NestedObject: schema.NestedAttributeObject{
+									Attributes: map[string]schema.Attribute{
+										"schema": schema.StringAttribute{
+											Description: "",
+											Required:    true,
+										},
+										"tables": schema.ListNestedAttribute{
+											Description: "",
+											Required:    true,
+											NestedObject: schema.NestedAttributeObject{
+												Attributes: map[string]schema.Attribute{
+													"table": schema.StringAttribute{
+														Description: "",
+														Required:    true,
+													},
+													"where_clause": schema.StringAttribute{
+														Description: "",
+														Optional:    true,
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
 					},
 					"aws_s3": schema.SingleNestedAttribute{
 						Description: "",
 						Optional:    true,
+						Attributes: map[string]schema.Attribute{
+							"connection_id": schema.StringAttribute{
+								Description: "",
+								Required:    true,
+							},
+						},
 					},
 					"generate": schema.SingleNestedAttribute{
 						Description: "",
 						Optional:    true,
+						Attributes: map[string]schema.Attribute{
+							"connection_id": schema.StringAttribute{
+								Description: "",
+								Required:    true,
+							},
+							"schema_options": schema.ListNestedAttribute{
+								Description: "",
+								Required:    true,
+								NestedObject: schema.NestedAttributeObject{
+									Attributes: map[string]schema.Attribute{
+										"schema": schema.StringAttribute{
+											Description: "",
+											Required:    true,
+										},
+										"tables": schema.ListNestedAttribute{
+											Description: "",
+											Required:    true,
+											NestedObject: schema.NestedAttributeObject{
+												Attributes: map[string]schema.Attribute{
+													"table": schema.StringAttribute{
+														Description: "",
+														Required:    true,
+													},
+													"row_count": schema.Int64Attribute{
+														Description: "",
+														Optional:    true,
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -573,10 +780,27 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 						"mysql": schema.SingleNestedAttribute{
 							Description: "",
 							Optional:    true,
+							Attributes: map[string]schema.Attribute{
+								"truncate_table": schema.SingleNestedAttribute{
+									Description: "",
+									Optional:    true,
+									Attributes: map[string]schema.Attribute{
+										"truncate_before_insert": schema.BoolAttribute{
+											Description: "",
+											Optional:    true,
+										},
+									},
+								},
+								"init_table_schema": schema.BoolAttribute{
+									Description: "",
+									Required:    true,
+								},
+							},
 						},
 						"aws_s3": schema.SingleNestedAttribute{
 							Description: "",
 							Optional:    true,
+							Attributes:  map[string]schema.Attribute{},
 						},
 					},
 				},
@@ -733,9 +957,6 @@ func (r *JobResource) Create(ctx context.Context, req resource.CreateRequest, re
 
 	job := jobResp.Msg.Job
 
-	// data.Id = types.StringValue(job.Id)
-	// data.Name = types.StringValue(job.Name)
-	// data.AccountId = types.StringValue(job.AccountId)
 	newModel, err := fromJobDto(job)
 	if err != nil {
 		resp.Diagnostics.AddError("job translate error", err.Error())
