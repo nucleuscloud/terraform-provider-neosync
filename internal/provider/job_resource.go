@@ -282,13 +282,10 @@ func fromModelJobMappings(input []*JobMapping) ([]*mgmtv1alpha1.JobMapping, erro
 				Config: &mgmtv1alpha1.TransformerConfig{},
 			},
 		}
-		config := &mgmtv1alpha1.TransformerConfig{}
-		if inputMapping.Transformer.Config.Passthrough != nil {
-			config.Config = &mgmtv1alpha1.TransformerConfig_PassthroughConfig{}
-		} else {
-			return nil, fmt.Errorf("the provided transformer config is not supported: %w", errors.ErrUnsupported)
+		config, err := fromModelTransformerConfig(inputMapping.Transformer.Config)
+		if err != nil {
+			return nil, err
 		}
-
 		mapping.Transformer.Config = config
 		output = append(output, mapping)
 	}
@@ -418,142 +415,9 @@ func fromJobDto(dto *mgmtv1alpha1.Job) (*JobResourceModel, error) {
 		model.Destinations = append(model.Destinations, dest)
 	}
 	for _, dtoMapping := range dto.Mappings {
-		tconfig := &TransformerConfig{}
-		switch config := dtoMapping.Transformer.Config.Config.(type) {
-		case *mgmtv1alpha1.TransformerConfig_GenerateEmailConfig:
-			tconfig.GenerateEmail = &TransformerEmpty{}
-		case *mgmtv1alpha1.TransformerConfig_TransformEmailConfig:
-			tconfig.TransformEmail = &TransformEmail{}
-		case *mgmtv1alpha1.TransformerConfig_GenerateBoolConfig:
-			tconfig.GenerateBool = &TransformerEmpty{}
-		case *mgmtv1alpha1.TransformerConfig_GenerateCardNumberConfig:
-			tconfig.GenerateCardNumber = &GenerateCardNumber{
-				ValidLuhn: types.BoolValue(config.GenerateCardNumberConfig.ValidLuhn),
-			}
-		case *mgmtv1alpha1.TransformerConfig_GenerateCityConfig:
-			tconfig.GenerateCity = &TransformerEmpty{}
-		case *mgmtv1alpha1.TransformerConfig_GenerateE164PhoneNumberConfig:
-			tconfig.GenerateE164PhoneNumber = &GenerateE164PhoneNumber{
-				Min: types.Int64Value(config.GenerateE164PhoneNumberConfig.Min),
-				Max: types.Int64Value(config.GenerateE164PhoneNumberConfig.Max),
-			}
-		case *mgmtv1alpha1.TransformerConfig_GenerateFirstNameConfig:
-			tconfig.GenerateFirstName = &TransformerEmpty{}
-		case *mgmtv1alpha1.TransformerConfig_GenerateFloat64Config:
-			tconfig.GenerateFloat64 = &GenerateFloat64{
-				RandomizeSign: types.BoolValue(config.GenerateFloat64Config.RandomizeSign),
-				Min:           types.Float64Value(config.GenerateFloat64Config.Min),
-				Max:           types.Float64Value(config.GenerateFloat64Config.Max),
-				Precision:     types.Int64Value(config.GenerateFloat64Config.Precision),
-			}
-		case *mgmtv1alpha1.TransformerConfig_GenerateFullAddressConfig:
-			tconfig.GenerateFullAddress = &TransformerEmpty{}
-		case *mgmtv1alpha1.TransformerConfig_GenerateFullNameConfig:
-			tconfig.GenerateFullName = &TransformerEmpty{}
-		case *mgmtv1alpha1.TransformerConfig_GenerateGenderConfig:
-			tconfig.GenerateGender = &GenerateGender{
-				Abbreviate: types.BoolValue(config.GenerateGenderConfig.Abbreviate),
-			}
-		case *mgmtv1alpha1.TransformerConfig_GenerateInt64PhoneNumberConfig:
-			tconfig.GenerateInt64PhoneNumber = &TransformerEmpty{}
-		case *mgmtv1alpha1.TransformerConfig_GenerateInt64Config:
-			tconfig.GenerateInt64 = &GenerateInt64{
-				RandomizeSign: types.BoolValue(config.GenerateInt64Config.RandomizeSign),
-				Min:           types.Int64Value(config.GenerateInt64Config.Min),
-				Max:           types.Int64Value(config.GenerateInt64Config.Max),
-			}
-		case *mgmtv1alpha1.TransformerConfig_GenerateLastNameConfig:
-			tconfig.GenerateLastName = &TransformerEmpty{}
-		case *mgmtv1alpha1.TransformerConfig_GenerateSha256HashConfig:
-			tconfig.GenerateSha256Hash = &TransformerEmpty{}
-		case *mgmtv1alpha1.TransformerConfig_GenerateSsnConfig:
-			tconfig.GenerateSsn = &TransformerEmpty{}
-		case *mgmtv1alpha1.TransformerConfig_GenerateStateConfig:
-			tconfig.GenerateState = &TransformerEmpty{}
-		case *mgmtv1alpha1.TransformerConfig_GenerateStreetAddressConfig:
-			tconfig.GenerateStreetAddress = &TransformerEmpty{}
-		case *mgmtv1alpha1.TransformerConfig_GenerateStringPhoneNumberConfig:
-			tconfig.GenerateStringPhoneNumber = &GenerateStringPhoneNumber{
-				IncludeHyphens: types.BoolValue(config.GenerateStringPhoneNumberConfig.IncludeHyphens),
-			}
-		case *mgmtv1alpha1.TransformerConfig_GenerateStringConfig:
-			tconfig.GenerateString = &GenerateString{
-				Min: types.Int64Value(config.GenerateStringConfig.Min),
-				Max: types.Int64Value(config.GenerateStringConfig.Max),
-			}
-		case *mgmtv1alpha1.TransformerConfig_GenerateUnixtimestampConfig:
-			tconfig.GenerateUnixtimestamp = &TransformerEmpty{}
-		case *mgmtv1alpha1.TransformerConfig_GenerateUsernameConfig:
-			tconfig.GenerateUsername = &TransformerEmpty{}
-		case *mgmtv1alpha1.TransformerConfig_GenerateUtctimestampConfig:
-			tconfig.GenerateUtctimestamp = &TransformerEmpty{}
-		case *mgmtv1alpha1.TransformerConfig_GenerateUuidConfig:
-			tconfig.GenerateUuid = &GenerateUuid{
-				IncludeHyphens: types.BoolValue(config.GenerateUuidConfig.IncludeHyphens),
-			}
-		case *mgmtv1alpha1.TransformerConfig_GenerateZipcodeConfig:
-			tconfig.GenerateZipcode = &TransformerEmpty{}
-		case *mgmtv1alpha1.TransformerConfig_TransformE164PhoneNumberConfig:
-			tconfig.TransformE164PhoneNumber = &TransformE164PhoneNumber{
-				PreserveLength: types.BoolValue(config.TransformE164PhoneNumberConfig.PreserveLength),
-			}
-		case *mgmtv1alpha1.TransformerConfig_TransformFirstNameConfig:
-			tconfig.TransformFirstName = &TransformFirstName{
-				PreserveLength: types.BoolValue(config.TransformFirstNameConfig.PreserveLength),
-			}
-		case *mgmtv1alpha1.TransformerConfig_TransformFloat64Config:
-			tconfig.TransformFloat64 = &TransformFloat64{
-				RandomizationRangeMin: types.Float64Value(config.TransformFloat64Config.RandomizationRangeMin),
-				RandomizationRangeMax: types.Float64Value(config.TransformFloat64Config.RandomizationRangeMax),
-			}
-		case *mgmtv1alpha1.TransformerConfig_TransformFullNameConfig:
-			tconfig.TransformFullName = &TransformFullName{
-				PreserveLength: types.BoolValue(config.TransformFullNameConfig.PreserveLength),
-			}
-		case *mgmtv1alpha1.TransformerConfig_TransformInt64PhoneNumberConfig:
-			tconfig.TransformInt64PhoneNumber = &TransformInt64PhoneNumber{
-				PreserveLength: types.BoolValue(config.TransformInt64PhoneNumberConfig.PreserveLength),
-			}
-		case *mgmtv1alpha1.TransformerConfig_TransformInt64Config:
-			tconfig.TransformInt64 = &TransformInt64{
-				RandomizationRangeMin: types.Int64Value(config.TransformInt64Config.RandomizationRangeMin),
-				RandomizationRangeMax: types.Int64Value(config.TransformInt64Config.RandomizationRangeMax),
-			}
-		case *mgmtv1alpha1.TransformerConfig_TransformLastNameConfig:
-			tconfig.TransformLastName = &TransformLastName{
-				PreserveLength: types.BoolValue(config.TransformLastNameConfig.PreserveLength),
-			}
-		case *mgmtv1alpha1.TransformerConfig_TransformPhoneNumberConfig:
-			tconfig.TransformPhoneNumber = &TransformPhoneNumber{
-				PreserveLength: types.BoolValue(config.TransformPhoneNumberConfig.PreserveLength),
-				IncludeHyphens: types.BoolValue(config.TransformPhoneNumberConfig.IncludeHyphens),
-			}
-		case *mgmtv1alpha1.TransformerConfig_TransformStringConfig:
-			tconfig.TransformString = &TransformString{
-				PreserveLength: types.BoolValue(config.TransformStringConfig.PreserveLength),
-			}
-		case *mgmtv1alpha1.TransformerConfig_PassthroughConfig:
-			tconfig.Passthrough = &TransformerEmpty{}
-		case *mgmtv1alpha1.TransformerConfig_Nullconfig:
-			tconfig.Null = &TransformerEmpty{}
-		case *mgmtv1alpha1.TransformerConfig_UserDefinedTransformerConfig:
-			tconfig.UserDefinedTransformer = &UserDefinedTransformer{
-				Id: types.StringValue(config.UserDefinedTransformerConfig.Id),
-			}
-		case *mgmtv1alpha1.TransformerConfig_GenerateDefaultConfig:
-			tconfig.GenerateDefault = &TransformerEmpty{}
-		case *mgmtv1alpha1.TransformerConfig_TransformJavascriptConfig:
-			tconfig.TransformJavascript = &TransformJavascript{
-				Code: types.StringValue(config.TransformJavascriptConfig.Code),
-			}
-		case *mgmtv1alpha1.TransformerConfig_GenerateCategoricalConfig:
-			tconfig.GenerateCategorical = &GenerateCategorical{
-				Categories: types.StringValue(config.GenerateCategoricalConfig.Categories),
-			}
-		case *mgmtv1alpha1.TransformerConfig_TransformCharacterScrambleConfig:
-			tconfig.TransformCharacterScramble = &TransformerEmpty{}
-		default:
-			return nil, fmt.Errorf("this job mapping transformer is not currently supported by this provider: %w", errors.ErrUnsupported)
+		tconfig, err := toTransformerConfigFromDto(dtoMapping.Transformer.Config)
+		if err != nil {
+			return nil, err
 		}
 		mapping := &JobMapping{
 			Schema: types.StringValue(dtoMapping.Schema),
@@ -584,6 +448,372 @@ func fromJobDto(dto *mgmtv1alpha1.Job) (*JobResourceModel, error) {
 		}
 	}
 	return model, nil
+}
+
+func fromModelTransformerConfig(model *TransformerConfig) (*mgmtv1alpha1.TransformerConfig, error) {
+	dto := &mgmtv1alpha1.TransformerConfig{}
+	if model.GenerateEmail != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateEmailConfig{
+			GenerateEmailConfig: &mgmtv1alpha1.GenerateEmail{},
+		}
+	} else if model.TransformEmail != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_TransformEmailConfig{
+			TransformEmailConfig: &mgmtv1alpha1.TransformEmail{
+				PreserveDomain: model.TransformEmail.PreserveDomain.ValueBool(),
+				PreserveLength: model.TransformEmail.PreserveLength.ValueBool(),
+			},
+		}
+	} else if model.GenerateBool != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateBoolConfig{
+			GenerateBoolConfig: &mgmtv1alpha1.GenerateBool{},
+		}
+	} else if model.GenerateCardNumber != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateCardNumberConfig{
+			GenerateCardNumberConfig: &mgmtv1alpha1.GenerateCardNumber{
+				ValidLuhn: model.GenerateCardNumber.ValidLuhn.ValueBool(),
+			},
+		}
+	} else if model.GenerateCity != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateCityConfig{
+			GenerateCityConfig: &mgmtv1alpha1.GenerateCity{},
+		}
+	} else if model.GenerateE164PhoneNumber != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateE164PhoneNumberConfig{
+			GenerateE164PhoneNumberConfig: &mgmtv1alpha1.GenerateE164PhoneNumber{
+				Min: model.GenerateE164PhoneNumber.Min.ValueInt64(),
+				Max: model.GenerateE164PhoneNumber.Max.ValueInt64(),
+			},
+		}
+	} else if model.GenerateFirstName != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateFirstNameConfig{
+			GenerateFirstNameConfig: &mgmtv1alpha1.GenerateFirstName{},
+		}
+	} else if model.GenerateFloat64 != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateFloat64Config{
+			GenerateFloat64Config: &mgmtv1alpha1.GenerateFloat64{
+				RandomizeSign: model.GenerateFloat64.RandomizeSign.ValueBool(),
+				Min:           model.GenerateFloat64.Min.ValueFloat64(),
+				Max:           model.GenerateFloat64.Max.ValueFloat64(),
+			},
+		}
+	} else if model.GenerateFullAddress != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateFullAddressConfig{
+			GenerateFullAddressConfig: &mgmtv1alpha1.GenerateFullAddress{},
+		}
+	} else if model.GenerateFullName != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateFullNameConfig{
+			GenerateFullNameConfig: &mgmtv1alpha1.GenerateFullName{},
+		}
+	} else if model.GenerateGender != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateGenderConfig{
+			GenerateGenderConfig: &mgmtv1alpha1.GenerateGender{
+				Abbreviate: model.GenerateGender.Abbreviate.ValueBool(),
+			},
+		}
+	} else if model.GenerateInt64PhoneNumber != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateInt64PhoneNumberConfig{
+			GenerateInt64PhoneNumberConfig: &mgmtv1alpha1.GenerateInt64PhoneNumber{},
+		}
+	} else if model.GenerateInt64 != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateInt64Config{
+			GenerateInt64Config: &mgmtv1alpha1.GenerateInt64{
+				RandomizeSign: model.GenerateInt64.RandomizeSign.ValueBool(),
+				Min:           model.GenerateInt64.Min.ValueInt64(),
+				Max:           model.GenerateInt64.Max.ValueInt64(),
+			},
+		}
+	} else if model.GenerateLastName != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateLastNameConfig{
+			GenerateLastNameConfig: &mgmtv1alpha1.GenerateLastName{},
+		}
+	} else if model.GenerateSha256Hash != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateSha256HashConfig{
+			GenerateSha256HashConfig: &mgmtv1alpha1.GenerateSha256Hash{},
+		}
+	} else if model.GenerateSsn != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateSsnConfig{
+			GenerateSsnConfig: &mgmtv1alpha1.GenerateSSN{},
+		}
+	} else if model.GenerateState != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateStateConfig{
+			GenerateStateConfig: &mgmtv1alpha1.GenerateState{},
+		}
+	} else if model.GenerateStreetAddress != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateStreetAddressConfig{
+			GenerateStreetAddressConfig: &mgmtv1alpha1.GenerateStreetAddress{},
+		}
+	} else if model.GenerateStringPhoneNumber != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateStringPhoneNumberConfig{
+			GenerateStringPhoneNumberConfig: &mgmtv1alpha1.GenerateStringPhoneNumber{
+				IncludeHyphens: model.GenerateStringPhoneNumber.IncludeHyphens.ValueBool(),
+			},
+		}
+	} else if model.GenerateString != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateStringConfig{
+			GenerateStringConfig: &mgmtv1alpha1.GenerateString{
+				Min: model.GenerateString.Min.ValueInt64(),
+				Max: model.GenerateString.Max.ValueInt64(),
+			},
+		}
+	} else if model.GenerateUnixtimestamp != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateUnixtimestampConfig{
+			GenerateUnixtimestampConfig: &mgmtv1alpha1.GenerateUnixTimestamp{},
+		}
+	} else if model.GenerateUsername != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateUsernameConfig{
+			GenerateUsernameConfig: &mgmtv1alpha1.GenerateUsername{},
+		}
+	} else if model.GenerateUtctimestamp != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateUtctimestampConfig{
+			GenerateUtctimestampConfig: &mgmtv1alpha1.GenerateUtcTimestamp{},
+		}
+	} else if model.GenerateUuid != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateUuidConfig{
+			GenerateUuidConfig: &mgmtv1alpha1.GenerateUuid{
+				IncludeHyphens: model.GenerateUuid.IncludeHyphens.ValueBool(),
+			},
+		}
+	} else if model.GenerateZipcode != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateZipcodeConfig{
+			GenerateZipcodeConfig: &mgmtv1alpha1.GenerateZipcode{},
+		}
+	} else if model.TransformE164PhoneNumber != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateE164PhoneNumberConfig{
+			GenerateE164PhoneNumberConfig: &mgmtv1alpha1.GenerateE164PhoneNumber{
+				Min: model.GenerateE164PhoneNumber.Min.ValueInt64(),
+				Max: model.GenerateE164PhoneNumber.Max.ValueInt64(),
+			},
+		}
+	} else if model.TransformFirstName != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateFirstNameConfig{
+			GenerateFirstNameConfig: &mgmtv1alpha1.GenerateFirstName{},
+		}
+	} else if model.TransformFloat64 != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_TransformFloat64Config{
+			TransformFloat64Config: &mgmtv1alpha1.TransformFloat64{
+				RandomizationRangeMin: model.TransformFloat64.RandomizationRangeMin.ValueFloat64(),
+				RandomizationRangeMax: model.TransformFloat64.RandomizationRangeMax.ValueFloat64(),
+			},
+		}
+	} else if model.TransformFullName != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_TransformFullNameConfig{
+			TransformFullNameConfig: &mgmtv1alpha1.TransformFullName{
+				PreserveLength: model.TransformFullName.PreserveLength.ValueBool(),
+			},
+		}
+	} else if model.TransformInt64PhoneNumber != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_TransformInt64PhoneNumberConfig{
+			TransformInt64PhoneNumberConfig: &mgmtv1alpha1.TransformInt64PhoneNumber{
+				PreserveLength: model.TransformInt64PhoneNumber.PreserveLength.ValueBool(),
+			},
+		}
+	} else if model.TransformInt64 != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateInt64Config{
+			GenerateInt64Config: &mgmtv1alpha1.GenerateInt64{
+				RandomizeSign: model.GenerateInt64.RandomizeSign.ValueBool(),
+				Min:           model.GenerateInt64.Min.ValueInt64(),
+				Max:           model.GenerateInt64.Max.ValueInt64(),
+			},
+		}
+	} else if model.TransformLastName != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_TransformLastNameConfig{
+			TransformLastNameConfig: &mgmtv1alpha1.TransformLastName{
+				PreserveLength: model.TransformLastName.PreserveLength.ValueBool(),
+			},
+		}
+	} else if model.TransformPhoneNumber != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_TransformPhoneNumberConfig{
+			TransformPhoneNumberConfig: &mgmtv1alpha1.TransformPhoneNumber{
+				PreserveLength: model.TransformPhoneNumber.PreserveLength.ValueBool(),
+				IncludeHyphens: model.TransformPhoneNumber.IncludeHyphens.ValueBool(),
+			},
+		}
+	} else if model.TransformString != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_TransformStringConfig{
+			TransformStringConfig: &mgmtv1alpha1.TransformString{
+				PreserveLength: model.TransformString.PreserveLength.ValueBool(),
+			},
+		}
+	} else if model.Passthrough != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_PassthroughConfig{
+			PassthroughConfig: &mgmtv1alpha1.Passthrough{},
+		}
+	} else if model.Null != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_Nullconfig{
+			Nullconfig: &mgmtv1alpha1.Null{},
+		}
+	} else if model.UserDefinedTransformer != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_UserDefinedTransformerConfig{
+			UserDefinedTransformerConfig: &mgmtv1alpha1.UserDefinedTransformerConfig{
+				Id: model.UserDefinedTransformer.Id.ValueString(),
+			},
+		}
+	} else if model.GenerateDefault != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateDefaultConfig{
+			GenerateDefaultConfig: &mgmtv1alpha1.GenerateDefault{},
+		}
+	} else if model.TransformJavascript != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_TransformJavascriptConfig{
+			TransformJavascriptConfig: &mgmtv1alpha1.TransformJavascript{
+				Code: model.TransformJavascript.Code.ValueString(),
+			},
+		}
+	} else if model.GenerateCategorical != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateCategoricalConfig{
+			GenerateCategoricalConfig: &mgmtv1alpha1.GenerateCategorical{
+				Categories: model.GenerateCategorical.Categories.ValueString(),
+			},
+		}
+	} else if model.TransformCharacterScramble != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_TransformCharacterScrambleConfig{
+			TransformCharacterScrambleConfig: &mgmtv1alpha1.TransformCharacterScramble{},
+		}
+	} else {
+		return nil, fmt.Errorf("transformer config is not currently supported by this provider: %w", errors.ErrUnsupported)
+	}
+
+	return dto, nil
+}
+
+func toTransformerConfigFromDto(dto *mgmtv1alpha1.TransformerConfig) (*TransformerConfig, error) {
+	tconfig := &TransformerConfig{}
+	switch config := dto.Config.(type) {
+	case *mgmtv1alpha1.TransformerConfig_GenerateEmailConfig:
+		tconfig.GenerateEmail = &TransformerEmpty{}
+	case *mgmtv1alpha1.TransformerConfig_TransformEmailConfig:
+		tconfig.TransformEmail = &TransformEmail{}
+	case *mgmtv1alpha1.TransformerConfig_GenerateBoolConfig:
+		tconfig.GenerateBool = &TransformerEmpty{}
+	case *mgmtv1alpha1.TransformerConfig_GenerateCardNumberConfig:
+		tconfig.GenerateCardNumber = &GenerateCardNumber{
+			ValidLuhn: types.BoolValue(config.GenerateCardNumberConfig.ValidLuhn),
+		}
+	case *mgmtv1alpha1.TransformerConfig_GenerateCityConfig:
+		tconfig.GenerateCity = &TransformerEmpty{}
+	case *mgmtv1alpha1.TransformerConfig_GenerateE164PhoneNumberConfig:
+		tconfig.GenerateE164PhoneNumber = &GenerateE164PhoneNumber{
+			Min: types.Int64Value(config.GenerateE164PhoneNumberConfig.Min),
+			Max: types.Int64Value(config.GenerateE164PhoneNumberConfig.Max),
+		}
+	case *mgmtv1alpha1.TransformerConfig_GenerateFirstNameConfig:
+		tconfig.GenerateFirstName = &TransformerEmpty{}
+	case *mgmtv1alpha1.TransformerConfig_GenerateFloat64Config:
+		tconfig.GenerateFloat64 = &GenerateFloat64{
+			RandomizeSign: types.BoolValue(config.GenerateFloat64Config.RandomizeSign),
+			Min:           types.Float64Value(config.GenerateFloat64Config.Min),
+			Max:           types.Float64Value(config.GenerateFloat64Config.Max),
+			Precision:     types.Int64Value(config.GenerateFloat64Config.Precision),
+		}
+	case *mgmtv1alpha1.TransformerConfig_GenerateFullAddressConfig:
+		tconfig.GenerateFullAddress = &TransformerEmpty{}
+	case *mgmtv1alpha1.TransformerConfig_GenerateFullNameConfig:
+		tconfig.GenerateFullName = &TransformerEmpty{}
+	case *mgmtv1alpha1.TransformerConfig_GenerateGenderConfig:
+		tconfig.GenerateGender = &GenerateGender{
+			Abbreviate: types.BoolValue(config.GenerateGenderConfig.Abbreviate),
+		}
+	case *mgmtv1alpha1.TransformerConfig_GenerateInt64PhoneNumberConfig:
+		tconfig.GenerateInt64PhoneNumber = &TransformerEmpty{}
+	case *mgmtv1alpha1.TransformerConfig_GenerateInt64Config:
+		tconfig.GenerateInt64 = &GenerateInt64{
+			RandomizeSign: types.BoolValue(config.GenerateInt64Config.RandomizeSign),
+			Min:           types.Int64Value(config.GenerateInt64Config.Min),
+			Max:           types.Int64Value(config.GenerateInt64Config.Max),
+		}
+	case *mgmtv1alpha1.TransformerConfig_GenerateLastNameConfig:
+		tconfig.GenerateLastName = &TransformerEmpty{}
+	case *mgmtv1alpha1.TransformerConfig_GenerateSha256HashConfig:
+		tconfig.GenerateSha256Hash = &TransformerEmpty{}
+	case *mgmtv1alpha1.TransformerConfig_GenerateSsnConfig:
+		tconfig.GenerateSsn = &TransformerEmpty{}
+	case *mgmtv1alpha1.TransformerConfig_GenerateStateConfig:
+		tconfig.GenerateState = &TransformerEmpty{}
+	case *mgmtv1alpha1.TransformerConfig_GenerateStreetAddressConfig:
+		tconfig.GenerateStreetAddress = &TransformerEmpty{}
+	case *mgmtv1alpha1.TransformerConfig_GenerateStringPhoneNumberConfig:
+		tconfig.GenerateStringPhoneNumber = &GenerateStringPhoneNumber{
+			IncludeHyphens: types.BoolValue(config.GenerateStringPhoneNumberConfig.IncludeHyphens),
+		}
+	case *mgmtv1alpha1.TransformerConfig_GenerateStringConfig:
+		tconfig.GenerateString = &GenerateString{
+			Min: types.Int64Value(config.GenerateStringConfig.Min),
+			Max: types.Int64Value(config.GenerateStringConfig.Max),
+		}
+	case *mgmtv1alpha1.TransformerConfig_GenerateUnixtimestampConfig:
+		tconfig.GenerateUnixtimestamp = &TransformerEmpty{}
+	case *mgmtv1alpha1.TransformerConfig_GenerateUsernameConfig:
+		tconfig.GenerateUsername = &TransformerEmpty{}
+	case *mgmtv1alpha1.TransformerConfig_GenerateUtctimestampConfig:
+		tconfig.GenerateUtctimestamp = &TransformerEmpty{}
+	case *mgmtv1alpha1.TransformerConfig_GenerateUuidConfig:
+		tconfig.GenerateUuid = &GenerateUuid{
+			IncludeHyphens: types.BoolValue(config.GenerateUuidConfig.IncludeHyphens),
+		}
+	case *mgmtv1alpha1.TransformerConfig_GenerateZipcodeConfig:
+		tconfig.GenerateZipcode = &TransformerEmpty{}
+	case *mgmtv1alpha1.TransformerConfig_TransformE164PhoneNumberConfig:
+		tconfig.TransformE164PhoneNumber = &TransformE164PhoneNumber{
+			PreserveLength: types.BoolValue(config.TransformE164PhoneNumberConfig.PreserveLength),
+		}
+	case *mgmtv1alpha1.TransformerConfig_TransformFirstNameConfig:
+		tconfig.TransformFirstName = &TransformFirstName{
+			PreserveLength: types.BoolValue(config.TransformFirstNameConfig.PreserveLength),
+		}
+	case *mgmtv1alpha1.TransformerConfig_TransformFloat64Config:
+		tconfig.TransformFloat64 = &TransformFloat64{
+			RandomizationRangeMin: types.Float64Value(config.TransformFloat64Config.RandomizationRangeMin),
+			RandomizationRangeMax: types.Float64Value(config.TransformFloat64Config.RandomizationRangeMax),
+		}
+	case *mgmtv1alpha1.TransformerConfig_TransformFullNameConfig:
+		tconfig.TransformFullName = &TransformFullName{
+			PreserveLength: types.BoolValue(config.TransformFullNameConfig.PreserveLength),
+		}
+	case *mgmtv1alpha1.TransformerConfig_TransformInt64PhoneNumberConfig:
+		tconfig.TransformInt64PhoneNumber = &TransformInt64PhoneNumber{
+			PreserveLength: types.BoolValue(config.TransformInt64PhoneNumberConfig.PreserveLength),
+		}
+	case *mgmtv1alpha1.TransformerConfig_TransformInt64Config:
+		tconfig.TransformInt64 = &TransformInt64{
+			RandomizationRangeMin: types.Int64Value(config.TransformInt64Config.RandomizationRangeMin),
+			RandomizationRangeMax: types.Int64Value(config.TransformInt64Config.RandomizationRangeMax),
+		}
+	case *mgmtv1alpha1.TransformerConfig_TransformLastNameConfig:
+		tconfig.TransformLastName = &TransformLastName{
+			PreserveLength: types.BoolValue(config.TransformLastNameConfig.PreserveLength),
+		}
+	case *mgmtv1alpha1.TransformerConfig_TransformPhoneNumberConfig:
+		tconfig.TransformPhoneNumber = &TransformPhoneNumber{
+			PreserveLength: types.BoolValue(config.TransformPhoneNumberConfig.PreserveLength),
+			IncludeHyphens: types.BoolValue(config.TransformPhoneNumberConfig.IncludeHyphens),
+		}
+	case *mgmtv1alpha1.TransformerConfig_TransformStringConfig:
+		tconfig.TransformString = &TransformString{
+			PreserveLength: types.BoolValue(config.TransformStringConfig.PreserveLength),
+		}
+	case *mgmtv1alpha1.TransformerConfig_PassthroughConfig:
+		tconfig.Passthrough = &TransformerEmpty{}
+	case *mgmtv1alpha1.TransformerConfig_Nullconfig:
+		tconfig.Null = &TransformerEmpty{}
+	case *mgmtv1alpha1.TransformerConfig_UserDefinedTransformerConfig:
+		tconfig.UserDefinedTransformer = &UserDefinedTransformer{
+			Id: types.StringValue(config.UserDefinedTransformerConfig.Id),
+		}
+	case *mgmtv1alpha1.TransformerConfig_GenerateDefaultConfig:
+		tconfig.GenerateDefault = &TransformerEmpty{}
+	case *mgmtv1alpha1.TransformerConfig_TransformJavascriptConfig:
+		tconfig.TransformJavascript = &TransformJavascript{
+			Code: types.StringValue(config.TransformJavascriptConfig.Code),
+		}
+	case *mgmtv1alpha1.TransformerConfig_GenerateCategoricalConfig:
+		tconfig.GenerateCategorical = &GenerateCategorical{
+			Categories: types.StringValue(config.GenerateCategoricalConfig.Categories),
+		}
+	case *mgmtv1alpha1.TransformerConfig_TransformCharacterScrambleConfig:
+		tconfig.TransformCharacterScramble = &TransformerEmpty{}
+	default:
+		return nil, fmt.Errorf("this job mapping transformer is not currently supported by this provider: %w", errors.ErrUnsupported)
+	}
+	return tconfig, nil
 }
 
 func i32Toi64(input *int32) *int64 {
@@ -1240,10 +1470,6 @@ func (r *JobResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 		resp.Diagnostics.AddError("unable to convert dto to state", err.Error())
 		return
 	}
-
-	// data.Id = types.StringValue(job.Id)
-	// data.Name = types.StringValue(job.Name)
-	// data.AccountId = types.StringValue(job.AccountId)
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, updatedModel)...)
