@@ -124,10 +124,6 @@ func (p *NeosyncProvider) Configure(ctx context.Context, req provider.ConfigureR
 		)
 	}
 
-	connclient := mgmtv1alpha1connect.NewConnectionServiceClient(
-		httpclient,
-		endpoint,
-	)
 	if apiToken != "" && accountId == "" {
 		userclient := mgmtv1alpha1connect.NewUserAccountServiceClient(httpclient, endpoint)
 		userAccountsResp, err := userclient.GetUserAccounts(ctx, connect.NewRequest(&mgmtv1alpha1.GetUserAccountsRequest{}))
@@ -144,8 +140,16 @@ func (p *NeosyncProvider) Configure(ctx context.Context, req provider.ConfigureR
 	}
 
 	configData := &ConfigData{
-		ConnectionClient: connclient,
+		ConnectionClient: mgmtv1alpha1connect.NewConnectionServiceClient(
+			httpclient,
+			endpoint,
+		),
+		JobClient: mgmtv1alpha1connect.NewJobServiceClient(
+			httpclient,
+			endpoint,
+		),
 	}
+
 	if accountId != "" {
 		configData.AccountId = &accountId
 	}

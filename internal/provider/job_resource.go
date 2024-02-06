@@ -2,11 +2,14 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"math"
 
 	"connectrpc.com/connect"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -28,15 +31,319 @@ type JobResource struct {
 }
 
 type JobResourceModel struct {
-	Id              types.String     `tfsdk:"id"`
-	Name            types.String     `tfsdk:"name"`
-	AccountId       types.String     `tfsdk:"account_id"`
-	JobSource       *JobSource       `tfsdk:"source"`
-	Destinations    []JobDestination `tfsdk:"destinations"`
-	Mappings        []JobMapping     `tfsdk:"mappings"`
-	CronSchedule    types.String     `tfsdk:"cron_schedule"`
-	SyncOptions     *ActivityOptions `tfsdk:"sync_options"`
-	WorkflowOptions *WorkflowOptions `tfsdk:"workflow_options"`
+	Id              types.String      `tfsdk:"id"`
+	Name            types.String      `tfsdk:"name"`
+	AccountId       types.String      `tfsdk:"account_id"`
+	JobSource       *JobSource        `tfsdk:"source"`
+	Destinations    []*JobDestination `tfsdk:"destinations"`
+	Mappings        []*JobMapping     `tfsdk:"mappings"`
+	CronSchedule    types.String      `tfsdk:"cron_schedule"`
+	SyncOptions     *ActivityOptions  `tfsdk:"sync_options"`
+	WorkflowOptions *WorkflowOptions  `tfsdk:"workflow_options"`
+}
+
+// func toJobDto(model *JobResourceModel) (*mgmtv1alpha1.Job, error) {
+// 	return nil, nil
+// }
+
+func toCreateJobDto(model *JobResourceModel) (*mgmtv1alpha1.CreateJobRequest, error) {
+	if model == nil {
+		return nil, errors.New("model was nil")
+	}
+
+	mappings, err := fromModelJobMappings(model.Mappings)
+	if err != nil {
+		return nil, err
+	}
+	source, err := fromModelJobSource(model.JobSource)
+	if err != nil {
+		return nil, err
+	}
+
+	workflowOpts, err := fromModelWorkflowOptions(model.WorkflowOptions)
+	if err != nil {
+		return nil, err
+	}
+	syncOpts, err := fromModelSyncOptions(model.SyncOptions)
+	if err != nil {
+		return nil, err
+	}
+	destinations, err := fromModelDestinationsToCreate(model.Destinations)
+	if err != nil {
+		return nil, err
+	}
+
+	return &mgmtv1alpha1.CreateJobRequest{
+		JobName:         model.Name.ValueString(),
+		AccountId:       model.AccountId.ValueString(),
+		CronSchedule:    model.CronSchedule.ValueStringPointer(),
+		Mappings:        mappings,
+		Source:          source,
+		Destinations:    destinations,
+		InitiateJobRun:  false,
+		WorkflowOptions: workflowOpts,
+		SyncOptions:     syncOpts,
+	}, nil
+}
+
+func fromModelDestinationsToCreate(input []*JobDestination) ([]*mgmtv1alpha1.CreateJobDestination, error) {
+	output := []*mgmtv1alpha1.CreateJobDestination{}
+
+	for _, jd := range input {
+		cjd := &mgmtv1alpha1.CreateJobDestination{
+			ConnectionId: jd.ConnectionId.ValueString(),
+			Options:      &mgmtv1alpha1.JobDestinationOptions{},
+		}
+		if jd.Postgres != nil {
+			var truncateTable *mgmtv1alpha1.PostgresTruncateTableConfig
+			if jd.Postgres.TruncateTable != nil {
+				truncateTable = &mgmtv1alpha1.PostgresTruncateTableConfig{
+					TruncateBeforeInsert: jd.Postgres.TruncateTable.TruncateBeforeInsert.ValueBool(),
+					Cascade:              jd.Postgres.TruncateTable.Cascade.ValueBool(),
+				}
+			}
+			cjd.Options.Config = &mgmtv1alpha1.JobDestinationOptions_PostgresOptions{
+				PostgresOptions: &mgmtv1alpha1.PostgresDestinationConnectionOptions{
+					InitTableSchema: jd.Postgres.InitTableSchema.ValueBool(),
+					TruncateTable:   truncateTable,
+				},
+			}
+		} else {
+			return nil, fmt.Errorf("the provided job destination type is not currently supported by this provider: %w", errors.ErrUnsupported)
+		}
+
+		output = append(output, cjd)
+	}
+
+	return output, nil
+}
+
+func fromModelSyncOptions(input *ActivityOptions) (*mgmtv1alpha1.ActivityOptions, error) {
+	if input == nil {
+		return nil, nil
+	}
+
+	if input.ScheduleToCloseTimeout.IsUnknown() && input.StartToCloseTimeout.IsUnknown() && input.RetryPolicy == nil {
+		return nil, nil
+	}
+
+	output := &mgmtv1alpha1.ActivityOptions{
+		ScheduleToCloseTimeout: input.ScheduleToCloseTimeout.ValueInt64Pointer(),
+		StartToCloseTimeout:    input.StartToCloseTimeout.ValueInt64Pointer(),
+		RetryPolicy:            &mgmtv1alpha1.RetryPolicy{},
+	}
+	if input.RetryPolicy != nil {
+		output.RetryPolicy.MaximumAttempts = i64Toi32(input.RetryPolicy.MaximumAttempts.ValueInt64Pointer())
+	}
+	return output, nil
+}
+
+func fromModelWorkflowOptions(input *WorkflowOptions) (*mgmtv1alpha1.WorkflowOptions, error) {
+	if input == nil {
+		return nil, nil
+	}
+	if input.RunTimeout.IsUnknown() {
+		return nil, nil
+	}
+
+	output := &mgmtv1alpha1.WorkflowOptions{
+		RunTimeout: input.RunTimeout.ValueInt64Pointer(),
+	}
+
+	return output, nil
+}
+
+func fromModelJobSource(input *JobSource) (*mgmtv1alpha1.JobSource, error) {
+	if input == nil {
+		return nil, errors.New("input job source was nil")
+	}
+
+	output := &mgmtv1alpha1.JobSource{
+		Options: &mgmtv1alpha1.JobSourceOptions{},
+	}
+	if input.Postgres != nil {
+		schemas := []*mgmtv1alpha1.PostgresSourceSchemaOption{}
+		for _, schemaOpt := range input.Postgres.SchemaOptions {
+			tables := []*mgmtv1alpha1.PostgresSourceTableOption{}
+			for _, tableOpt := range schemaOpt.Tables {
+				tables = append(tables, &mgmtv1alpha1.PostgresSourceTableOption{
+					Table:       tableOpt.Table.ValueString(),
+					WhereClause: tableOpt.WhereClause.ValueStringPointer(),
+				})
+			}
+			schemas = append(schemas, &mgmtv1alpha1.PostgresSourceSchemaOption{
+				Schema: schemaOpt.Schema.ValueString(),
+				Tables: tables,
+			})
+		}
+		output.Options.Config = &mgmtv1alpha1.JobSourceOptions_Postgres{
+			Postgres: &mgmtv1alpha1.PostgresSourceConnectionOptions{
+				HaltOnNewColumnAddition: input.Postgres.HaltOnNewColumnAddition.ValueBool(),
+				ConnectionId:            input.Postgres.ConnectionId.ValueString(),
+				Schemas:                 schemas,
+			},
+		}
+	} else {
+		return nil, fmt.Errorf("the provided job source input is not currently supported by this provider: %w", errors.ErrUnsupported)
+	}
+
+	return output, nil
+}
+
+func fromModelJobMappings(input []*JobMapping) ([]*mgmtv1alpha1.JobMapping, error) {
+	output := []*mgmtv1alpha1.JobMapping{}
+
+	for _, inputMapping := range input {
+		if inputMapping.Transformer == nil || inputMapping.Transformer.Config == nil {
+			return nil, errors.New("transformer on input mapping was nil")
+		}
+		mapping := &mgmtv1alpha1.JobMapping{
+			Schema: inputMapping.Schema.ValueString(),
+			Table:  inputMapping.Table.ValueString(),
+			Column: inputMapping.Column.ValueString(),
+			Transformer: &mgmtv1alpha1.JobMappingTransformer{
+				Source: inputMapping.Transformer.Source.ValueString(),
+				Config: &mgmtv1alpha1.TransformerConfig{},
+			},
+		}
+		config := &mgmtv1alpha1.TransformerConfig{}
+		if inputMapping.Transformer.Config.Passthrough != nil {
+			config.Config = &mgmtv1alpha1.TransformerConfig_PassthroughConfig{}
+		} else {
+			return nil, fmt.Errorf("the provided transformer config is not supported: %w", errors.ErrUnsupported)
+		}
+
+		mapping.Transformer.Config = config
+		output = append(output, mapping)
+	}
+
+	return output, nil
+}
+
+func fromJobDto(dto *mgmtv1alpha1.Job) (*JobResourceModel, error) {
+	if dto == nil {
+		return nil, errors.New("dto was nil")
+	}
+	model := &JobResourceModel{
+		Id:           types.StringValue(dto.Id),
+		Name:         types.StringValue(dto.Name),
+		AccountId:    types.StringValue(dto.AccountId),
+		JobSource:    &JobSource{},
+		Destinations: []*JobDestination{},
+		Mappings:     []*JobMapping{},
+		CronSchedule: types.StringPointerValue(dto.CronSchedule),
+		// WorkflowOptions: &WorkflowOptions{},
+	}
+
+	switch source := dto.Source.Options.Config.(type) {
+	case *mgmtv1alpha1.JobSourceOptions_Postgres:
+		model.JobSource.Postgres = &JobSourcePostgresOptions{
+			HaltOnNewColumnAddition: types.BoolValue(source.Postgres.HaltOnNewColumnAddition),
+			ConnectionId:            types.StringValue(source.Postgres.ConnectionId),
+		}
+		schemaOpts := []*JobSourcePostgresSourceSchemaOption{}
+		for _, dtoopt := range source.Postgres.Schemas {
+			opt := &JobSourcePostgresSourceSchemaOption{
+				Schema: types.StringValue(dtoopt.Schema),
+				Tables: []*JobSourcePostgresSourceTableOption{},
+			}
+			for _, schemaOpt := range dtoopt.Tables {
+				opt.Tables = append(opt.Tables, &JobSourcePostgresSourceTableOption{
+					Table:       types.StringValue(schemaOpt.Table),
+					WhereClause: types.StringPointerValue(schemaOpt.WhereClause),
+				})
+			}
+			schemaOpts = append(model.JobSource.Postgres.SchemaOptions, opt)
+		}
+		if len(schemaOpts) > 0 {
+			model.JobSource.Postgres.SchemaOptions = schemaOpts
+		}
+
+	default:
+		return nil, fmt.Errorf("this job source is not currently supported by this provider: %w", errors.ErrUnsupported)
+	}
+	for _, dtoDest := range dto.Destinations {
+		dest := &JobDestination{
+			Id:           types.StringValue(dtoDest.Id),
+			ConnectionId: types.StringValue(dtoDest.ConnectionId),
+		}
+
+		switch opt := dtoDest.Options.Config.(type) {
+		case *mgmtv1alpha1.JobDestinationOptions_PostgresOptions:
+			dest.Postgres = &JobDestinationPostgresOptions{
+				InitTableSchema: types.BoolValue(opt.PostgresOptions.InitTableSchema),
+			}
+			if opt.PostgresOptions.TruncateTable != nil {
+				dest.Postgres.TruncateTable = &PostgresDestinationTruncateTable{
+					TruncateBeforeInsert: types.BoolValue(opt.PostgresOptions.TruncateTable.TruncateBeforeInsert),
+					Cascade:              types.BoolValue(opt.PostgresOptions.TruncateTable.Cascade),
+				}
+			}
+
+		default:
+			return nil, fmt.Errorf("this job dest is not currently supported by this provider: %w", errors.ErrUnsupported)
+		}
+
+		model.Destinations = append(model.Destinations, dest)
+	}
+	for _, dtoMapping := range dto.Mappings {
+		tconfig := &TransformerConfig{}
+		switch dtoMapping.Transformer.Config.Config.(type) {
+		case *mgmtv1alpha1.TransformerConfig_PassthroughConfig:
+			tconfig.Passthrough = &TransformerEmpty{}
+		default:
+			return nil, fmt.Errorf("this job mapping transformer is not currently supported by this provider: %w", errors.ErrUnsupported)
+		}
+		mapping := &JobMapping{
+			Schema: types.StringValue(dtoMapping.Schema),
+			Table:  types.StringValue(dtoMapping.Table),
+			Column: types.StringValue(dtoMapping.Column),
+			Transformer: &Transformer{
+				Source: types.StringValue(dtoMapping.Transformer.Source),
+				Config: tconfig,
+			},
+		}
+		model.Mappings = append(model.Mappings, mapping)
+	}
+
+	if dto.SyncOptions != nil && dto.SyncOptions.ScheduleToCloseTimeout != nil && dto.SyncOptions.StartToCloseTimeout != nil && dto.SyncOptions.RetryPolicy != nil {
+		model.SyncOptions = &ActivityOptions{
+			ScheduleToCloseTimeout: types.Int64PointerValue(dto.SyncOptions.ScheduleToCloseTimeout),
+			StartToCloseTimeout:    types.Int64PointerValue(dto.SyncOptions.StartToCloseTimeout),
+		}
+		if dto.SyncOptions.RetryPolicy != nil {
+			model.SyncOptions.RetryPolicy = &RetryPolicy{
+				MaximumAttempts: types.Int64PointerValue(i32Toi64(dto.SyncOptions.RetryPolicy.MaximumAttempts)),
+			}
+		}
+	}
+	if dto.WorkflowOptions != nil && dto.WorkflowOptions.RunTimeout != nil {
+		model.WorkflowOptions = &WorkflowOptions{
+			RunTimeout: types.Int64PointerValue(dto.WorkflowOptions.RunTimeout),
+		}
+	}
+	return model, nil
+}
+
+func i32Toi64(input *int32) *int64 {
+	if input == nil {
+		return nil
+	}
+	output := int64(*input)
+	return &output
+}
+
+// if input is unsafe, returns nil.
+func i64Toi32(input *int64) *int32 {
+	if input == nil {
+		return nil
+	}
+
+	if *input < math.MinInt32 || *input > math.MaxInt32 {
+		return nil
+	}
+	output := int32(*input)
+	return &output
 }
 
 type JobSource struct {
@@ -46,9 +353,9 @@ type JobSource struct {
 	AwsS3    *JobSourceAwsS3Options    `tfsdk:"aws_s3"`
 }
 type JobSourcePostgresOptions struct {
-	HaltOnNewColumnAddition types.Bool                            `tfsdk:"halt_on_new_column_addition"`
-	ConnectionId            types.String                          `tfsdk:"connection_id"`
-	SchemaOptions           []JobSourcePostgresSourceSchemaOption `tfsdk:"schema_options"`
+	HaltOnNewColumnAddition types.Bool                             `tfsdk:"halt_on_new_column_addition"`
+	ConnectionId            types.String                           `tfsdk:"connection_id"`
+	SchemaOptions           []*JobSourcePostgresSourceSchemaOption `tfsdk:"schema_options"`
 }
 type JobSourcePostgresSourceSchemaOption struct {
 	Schema types.String                          `tfsdk:"schema"`
@@ -64,6 +371,10 @@ type JobSourceGenerateOptions struct{}
 type JobSourceAwsS3Options struct{}
 
 type JobDestination struct {
+	Id           types.String `tfsdk:"id"`
+	ConnectionId types.String `tfsdk:"connection_id"`
+
+	// I think we need the Connection Id and Destination ID on here somewhere
 	Postgres *JobDestinationPostgresOptions `tfsdk:"postgres"`
 	Mysql    *JobDestinationMysqlOptions    `tfsdk:"mysql"`
 	AwsS3    *JobDestinationAwsS3Options    `tfsdk:"aws_s3"`
@@ -86,10 +397,15 @@ type JobMapping struct {
 	Transformer *Transformer `tfsdk:"transformer"`
 }
 type Transformer struct {
-	Source string             `tfsdk:"source"`
+	Source types.String       `tfsdk:"source"`
 	Config *TransformerConfig `tfsdk:"config"`
 }
-type TransformerConfig struct{} // todo
+
+// todo: maybe flatten this config to just live on the transformer
+type TransformerConfig struct {
+	Passthrough *TransformerEmpty `tfsdk:"passthrough"`
+}
+type TransformerEmpty struct{}
 type ActivityOptions struct {
 	ScheduleToCloseTimeout types.Int64  `tfsdk:"schedule_to_close_timeout"`
 	StartToCloseTimeout    types.Int64  `tfsdk:"start_to_close_timeout"`
@@ -133,7 +449,7 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 						Attributes: map[string]schema.Attribute{
 							"halt_on_new_column_addition": schema.BoolAttribute{
 								Description: "",
-								Optional:    true,
+								Required:    true,
 							},
 							"connection_id": schema.StringAttribute{
 								Description: "",
@@ -177,6 +493,10 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 						Description: "",
 						Optional:    true,
 					},
+					"generate": schema.SingleNestedAttribute{
+						Description: "",
+						Optional:    true,
+					},
 				},
 			},
 			"destinations": schema.ListNestedAttribute{
@@ -184,6 +504,15 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 				Required:    true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
+						"id": schema.StringAttribute{
+							Description: "",
+							Optional:    true,
+							Computed:    true,
+						},
+						"connection_id": schema.StringAttribute{
+							Description: "",
+							Optional:    true, // required if id is not set
+						},
 						"postgres": schema.SingleNestedAttribute{
 							Description: "",
 							Optional:    true,
@@ -204,7 +533,7 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 								},
 								"init_table_schema": schema.BoolAttribute{
 									Description: "",
-									Optional:    true,
+									Required:    true,
 								},
 							},
 						},
@@ -247,7 +576,12 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 								"config": schema.SingleNestedAttribute{
 									Description: "",
 									Required:    true,
-									Attributes:  map[string]schema.Attribute{}, // todo
+									Attributes: map[string]schema.Attribute{
+										"passthrough": schema.SingleNestedAttribute{
+											Description: "",
+											Optional:    true,
+										},
+									}, // todo
 								},
 							},
 						},
@@ -350,11 +684,15 @@ func (r *JobResource) Create(ctx context.Context, req resource.CreateRequest, re
 		resp.Diagnostics.AddError("no account id", "must provide account id either on the resource or provide through environment configuration")
 		return
 	}
+	data.AccountId = types.StringValue(accountId)
 
-	jobResp, err := r.client.CreateJob(ctx, connect.NewRequest(&mgmtv1alpha1.CreateJobRequest{
-		JobName:   data.Name.ValueString(),
-		AccountId: accountId,
-	}))
+	jobRequest, err := toCreateJobDto(&data)
+	if err != nil {
+		resp.Diagnostics.AddError("unable to create job request", err.Error())
+		return
+	}
+
+	jobResp, err := r.client.CreateJob(ctx, connect.NewRequest(jobRequest))
 	if err != nil {
 		resp.Diagnostics.AddError("create job error", err.Error())
 		return
@@ -362,16 +700,21 @@ func (r *JobResource) Create(ctx context.Context, req resource.CreateRequest, re
 
 	job := jobResp.Msg.Job
 
-	data.Id = types.StringValue(job.Id)
-	data.Name = types.StringValue(job.Name)
-	data.AccountId = types.StringValue(job.AccountId)
+	// data.Id = types.StringValue(job.Id)
+	// data.Name = types.StringValue(job.Name)
+	// data.AccountId = types.StringValue(job.AccountId)
+	newModel, err := fromJobDto(job)
+	if err != nil {
+		resp.Diagnostics.AddError("job translate error", err.Error())
+		return
+	}
 
 	// Write logs using the tflog package
 	// Documentation: https://terraform.io/plugin/log
 	tflog.Trace(ctx, "created job resource")
 
 	// Save data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, newModel)...)
 }
 
 func (r *JobResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -394,12 +737,18 @@ func (r *JobResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 
 	job := jobResp.Msg.Job
 
-	data.Id = types.StringValue(job.Id)
-	data.Name = types.StringValue(job.Name)
-	data.AccountId = types.StringValue(job.AccountId)
+	updatedModel, err := fromJobDto(job)
+	if err != nil {
+		resp.Diagnostics.AddError("unable to convert dto to state", err.Error())
+		return
+	}
+
+	// data.Id = types.StringValue(job.Id)
+	// data.Name = types.StringValue(job.Name)
+	// data.AccountId = types.StringValue(job.AccountId)
 
 	// Save updated data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, updatedModel)...)
 }
 
 func (r *JobResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
