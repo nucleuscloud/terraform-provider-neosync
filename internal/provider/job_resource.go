@@ -118,6 +118,7 @@ func fromModelDestinationsToCreate(input []*JobDestination) ([]*mgmtv1alpha1.Cre
 	return output, nil
 }
 
+// nolint
 func fromModelSyncOptions(input *ActivityOptions) (*mgmtv1alpha1.ActivityOptions, error) {
 	if input == nil {
 		return nil, nil
@@ -138,6 +139,7 @@ func fromModelSyncOptions(input *ActivityOptions) (*mgmtv1alpha1.ActivityOptions
 	return output, nil
 }
 
+// notlint
 func fromModelWorkflowOptions(input *WorkflowOptions) (*mgmtv1alpha1.WorkflowOptions, error) {
 	if input == nil {
 		return nil, nil
@@ -232,7 +234,6 @@ func fromJobDto(dto *mgmtv1alpha1.Job) (*JobResourceModel, error) {
 		Destinations: []*JobDestination{},
 		Mappings:     []*JobMapping{},
 		CronSchedule: types.StringPointerValue(dto.CronSchedule),
-		// WorkflowOptions: &WorkflowOptions{},
 	}
 
 	switch source := dto.Source.Options.Config.(type) {
