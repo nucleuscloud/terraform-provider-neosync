@@ -3,12 +3,12 @@
 page_title: "neosync_connection Resource - terraform-provider-neosync"
 subcategory: ""
 description: |-
-  Example resource
+  Neosync Connection resource
 ---
 
 # neosync_connection (Resource)
 
-Example resource
+Neosync Connection resource
 
 ## Example Usage
 

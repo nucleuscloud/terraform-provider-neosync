@@ -64,6 +64,7 @@ func (p *NeosyncProvider) Schema(ctx context.Context, req provider.SchemaRequest
 type ConfigData struct {
 	AccountId        *string
 	ConnectionClient mgmtv1alpha1connect.ConnectionServiceClient
+	JobClient        mgmtv1alpha1connect.JobServiceClient
 }
 
 func (p *NeosyncProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
@@ -123,10 +124,6 @@ func (p *NeosyncProvider) Configure(ctx context.Context, req provider.ConfigureR
 		)
 	}
 
-	connclient := mgmtv1alpha1connect.NewConnectionServiceClient(
-		httpclient,
-		endpoint,
-	)
 	if apiToken != "" && accountId == "" {
 		userclient := mgmtv1alpha1connect.NewUserAccountServiceClient(httpclient, endpoint)
 		userAccountsResp, err := userclient.GetUserAccounts(ctx, connect.NewRequest(&mgmtv1alpha1.GetUserAccountsRequest{}))
@@ -143,8 +140,16 @@ func (p *NeosyncProvider) Configure(ctx context.Context, req provider.ConfigureR
 	}
 
 	configData := &ConfigData{
-		ConnectionClient: connclient,
+		ConnectionClient: mgmtv1alpha1connect.NewConnectionServiceClient(
+			httpclient,
+			endpoint,
+		),
+		JobClient: mgmtv1alpha1connect.NewJobServiceClient(
+			httpclient,
+			endpoint,
+		),
 	}
+
 	if accountId != "" {
 		configData.AccountId = &accountId
 	}
@@ -156,12 +161,14 @@ func (p *NeosyncProvider) Configure(ctx context.Context, req provider.ConfigureR
 func (p *NeosyncProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewConnectionResource,
+		NewJobResource,
 	}
 }
 
 func (p *NeosyncProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewConnectionDataSource,
+		NewJobDataSource,
 	}
 }
 

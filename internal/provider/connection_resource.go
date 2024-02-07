@@ -134,7 +134,7 @@ var (
 func (r *ConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		// This description is used by the documentation generator and the language server.
-		Description: "Example resource",
+		Description: "Neosync Connection resource",
 
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
@@ -305,7 +305,7 @@ func (r *ConnectionResource) Configure(ctx context.Context, req resource.Configu
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected mgmtv1alpha1connect.ConnectionServiceClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *ConfigData, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 
 		return
