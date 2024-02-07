@@ -133,7 +133,6 @@ resource "neosync_connection" "test1" {
 			user = "test"
 			known_host_public_key = "123"
 			private_key = "my-private-key"
-			passphrase = "test"
 		}
 	}
 }
@@ -182,13 +181,13 @@ resource "neosync_connection" "test1" {
 					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.tunnel.user", "test"),
 					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.tunnel.known_host_public_key", "123"),
 					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.tunnel.private_key", "my-private-key"),
-					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.tunnel.passphrase", "test"),
 				),
 			},
 			{
 				Config: testAccConnectionConfigUpdated,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.tunnel.known_host_public_key", "111"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.tunnel.passphrase", "test"),
 				),
 			},
 		},
