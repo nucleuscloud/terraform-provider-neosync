@@ -61,7 +61,7 @@ func (r *UserDefinedTransformerResource) Schema(ctx context.Context, req resourc
 				Required:    true,
 			},
 			"source": schema.StringAttribute{
-				Description: "The system transformer that this user defined transformer is based off of",
+				Description: "The system transformer that this user defined transformer is based off of. This is the same value that is specified as the key in the config",
 				Required:    true,
 			},
 			"config": transformerSchema,

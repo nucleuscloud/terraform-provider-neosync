@@ -149,6 +149,10 @@ func (p *NeosyncProvider) Configure(ctx context.Context, req provider.ConfigureR
 			httpclient,
 			endpoint,
 		),
+		TransformerClient: mgmtv1alpha1connect.NewTransformersServiceClient(
+			httpclient,
+			endpoint,
+		),
 	}
 
 	if accountId != "" {

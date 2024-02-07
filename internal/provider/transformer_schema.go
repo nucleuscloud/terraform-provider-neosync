@@ -4,7 +4,7 @@ import "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 
 var (
 	transformerSchema = schema.SingleNestedAttribute{
-		Description: "",
+		Description: "This config object consists of the matching configuration defined with the source specified.",
 		Required:    true,
 		Attributes: map[string]schema.Attribute{
 			"generate_email": schema.SingleNestedAttribute{
