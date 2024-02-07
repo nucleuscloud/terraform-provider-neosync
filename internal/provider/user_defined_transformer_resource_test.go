@@ -67,3 +67,39 @@ resource "neosync_user_defined_transformer" "test1" {
 		},
 	})
 }
+
+func TestAcc_Ud_Transformer_From_System(t *testing.T) {
+	name := acctest.RandString(10)
+
+	config := fmt.Sprintf(`
+data "neosync_system_transformer" "gen_cc" {
+  source = "generate_card_number"
+}
+
+resource "neosync_user_defined_transformer" "test1" {
+  name = "%s"
+	description = "this is a test"
+	datatype = data.neosync_system_transformer.gen_cc.datatype
+	source = data.neosync_system_transformer.gen_cc.source
+	config = data.neosync_system_transformer.gen_cc.config
+}
+`, name)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("neosync_user_defined_transformer.test1", "id"),
+					resource.TestCheckResourceAttr("neosync_user_defined_transformer.test1", "name", name),
+					resource.TestCheckResourceAttr("neosync_user_defined_transformer.test1", "description", "this is a test"),
+					resource.TestCheckResourceAttr("neosync_user_defined_transformer.test1", "datatype", "int64"),
+					resource.TestCheckResourceAttr("neosync_user_defined_transformer.test1", "source", "generate_card_number"),
+					resource.TestCheckResourceAttr("neosync_user_defined_transformer.test1", "config.generate_card_number.valid_luhn", "true"),
+				),
+			},
+		},
+	})
+}
