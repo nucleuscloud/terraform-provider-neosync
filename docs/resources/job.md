@@ -230,10 +230,305 @@ Required:
 
 Optional:
 
+- `generate_bool` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--generate_bool))
+- `generate_card_number` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--generate_card_number))
+- `generate_categorical` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--generate_categorical))
+- `generate_city` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--generate_city))
+- `generate_default` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--generate_default))
+- `generate_e164_phone_number` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--generate_e164_phone_number))
+- `generate_email` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--generate_email))
+- `generate_firstname` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--generate_firstname))
+- `generate_float64` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--generate_float64))
+- `generate_full_address` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--generate_full_address))
+- `generate_fullname` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--generate_fullname))
+- `generate_gender` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--generate_gender))
+- `generate_int64` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--generate_int64))
+- `generate_int64_phone_number` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--generate_int64_phone_number))
+- `generate_lastname` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--generate_lastname))
+- `generate_sha256` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--generate_sha256))
+- `generate_ssn` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--generate_ssn))
+- `generate_state` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--generate_state))
+- `generate_street_address` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--generate_street_address))
+- `generate_string` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--generate_string))
+- `generate_string_phone_number` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--generate_string_phone_number))
+- `generate_unix_timestamp` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--generate_unix_timestamp))
+- `generate_username` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--generate_username))
+- `generate_utc_timestamp` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--generate_utc_timestamp))
+- `generate_uuid` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--generate_uuid))
+- `generate_zipcode` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--generate_zipcode))
+- `null` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--null))
 - `passthrough` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--passthrough))
+- `transform_character_scramble` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--transform_character_scramble))
+- `transform_e164_phone_number` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--transform_e164_phone_number))
+- `transform_email` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--transform_email))
+- `transform_firstname` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--transform_firstname))
+- `transform_float64` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--transform_float64))
+- `transform_fullname` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--transform_fullname))
+- `transform_int64` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--transform_int64))
+- `transform_int64_phone_number` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--transform_int64_phone_number))
+- `transform_javascript` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--transform_javascript))
+- `transform_lastname` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--transform_lastname))
+- `transform_phone_number` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--transform_phone_number))
+- `transform_string` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--transform_string))
+- `user_defined_transformer` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--user_defined_transformer))
+
+<a id="nestedatt--mappings--transformer--config--generate_bool"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+
+<a id="nestedatt--mappings--transformer--config--generate_card_number"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+Required:
+
+- `valid_luhn` (Boolean)
+
+
+<a id="nestedatt--mappings--transformer--config--generate_categorical"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+Required:
+
+- `categories` (String)
+
+
+<a id="nestedatt--mappings--transformer--config--generate_city"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+
+<a id="nestedatt--mappings--transformer--config--generate_default"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+
+<a id="nestedatt--mappings--transformer--config--generate_e164_phone_number"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+Required:
+
+- `max` (Number)
+- `min` (Number)
+
+
+<a id="nestedatt--mappings--transformer--config--generate_email"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+
+<a id="nestedatt--mappings--transformer--config--generate_firstname"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+
+<a id="nestedatt--mappings--transformer--config--generate_float64"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+Required:
+
+- `max` (Number)
+- `min` (Number)
+- `precision` (Number)
+- `randomize_sign` (Boolean)
+
+
+<a id="nestedatt--mappings--transformer--config--generate_full_address"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+
+<a id="nestedatt--mappings--transformer--config--generate_fullname"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+
+<a id="nestedatt--mappings--transformer--config--generate_gender"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+Required:
+
+- `abbreviate` (Boolean)
+
+
+<a id="nestedatt--mappings--transformer--config--generate_int64"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+Required:
+
+- `max` (Number)
+- `min` (Number)
+- `randomize_sign` (Boolean)
+
+
+<a id="nestedatt--mappings--transformer--config--generate_int64_phone_number"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+
+<a id="nestedatt--mappings--transformer--config--generate_lastname"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+
+<a id="nestedatt--mappings--transformer--config--generate_sha256"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+
+<a id="nestedatt--mappings--transformer--config--generate_ssn"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+
+<a id="nestedatt--mappings--transformer--config--generate_state"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+
+<a id="nestedatt--mappings--transformer--config--generate_street_address"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+
+<a id="nestedatt--mappings--transformer--config--generate_string"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+Required:
+
+- `max` (Number)
+- `min` (Number)
+
+
+<a id="nestedatt--mappings--transformer--config--generate_string_phone_number"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+Required:
+
+- `max` (Number)
+- `min` (Number)
+
+
+<a id="nestedatt--mappings--transformer--config--generate_unix_timestamp"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+
+<a id="nestedatt--mappings--transformer--config--generate_username"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+
+<a id="nestedatt--mappings--transformer--config--generate_utc_timestamp"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+
+<a id="nestedatt--mappings--transformer--config--generate_uuid"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+Required:
+
+- `include_hyphens` (Boolean)
+
+
+<a id="nestedatt--mappings--transformer--config--generate_zipcode"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+
+<a id="nestedatt--mappings--transformer--config--null"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
 
 <a id="nestedatt--mappings--transformer--config--passthrough"></a>
-### Nested Schema for `mappings.transformer.config.passthrough`
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+
+<a id="nestedatt--mappings--transformer--config--transform_character_scramble"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+
+<a id="nestedatt--mappings--transformer--config--transform_e164_phone_number"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+Required:
+
+- `preserve_length` (Boolean)
+
+
+<a id="nestedatt--mappings--transformer--config--transform_email"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+Required:
+
+- `preserve_domain` (Boolean)
+- `preserve_length` (Boolean)
+
+
+<a id="nestedatt--mappings--transformer--config--transform_firstname"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+Required:
+
+- `preserve_length` (Boolean)
+
+
+<a id="nestedatt--mappings--transformer--config--transform_float64"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+Required:
+
+- `randomization_range_max` (Number)
+- `randomization_range_min` (Number)
+
+
+<a id="nestedatt--mappings--transformer--config--transform_fullname"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+Required:
+
+- `preserve_length` (Boolean)
+
+
+<a id="nestedatt--mappings--transformer--config--transform_int64"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+Required:
+
+- `randomization_range_max` (Number)
+- `randomization_range_min` (Number)
+
+
+<a id="nestedatt--mappings--transformer--config--transform_int64_phone_number"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+Required:
+
+- `preserve_length` (Boolean)
+
+
+<a id="nestedatt--mappings--transformer--config--transform_javascript"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+Required:
+
+- `code` (String)
+
+
+<a id="nestedatt--mappings--transformer--config--transform_lastname"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+Required:
+
+- `preserve_length` (Boolean)
+
+
+<a id="nestedatt--mappings--transformer--config--transform_phone_number"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+Required:
+
+- `preserve_length` (Boolean)
+
+
+<a id="nestedatt--mappings--transformer--config--transform_string"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+Required:
+
+- `preserve_length` (Boolean)
+
+
+<a id="nestedatt--mappings--transformer--config--user_defined_transformer"></a>
+### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+
+Required:
+
+- `id` (String)
 
 
 
