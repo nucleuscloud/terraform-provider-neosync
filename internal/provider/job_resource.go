@@ -545,7 +545,8 @@ func fromModelTransformerConfig(model *TransformerConfig) (*mgmtv1alpha1.Transfo
 	} else if model.GenerateStringPhoneNumber != nil {
 		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateStringPhoneNumberConfig{
 			GenerateStringPhoneNumberConfig: &mgmtv1alpha1.GenerateStringPhoneNumber{
-				IncludeHyphens: model.GenerateStringPhoneNumber.IncludeHyphens.ValueBool(),
+				Min: model.GenerateStringPhoneNumber.Min.ValueInt64(),
+				Max: model.GenerateStringPhoneNumber.Max.ValueInt64(),
 			},
 		}
 	} else if model.GenerateString != nil {
@@ -625,7 +626,6 @@ func fromModelTransformerConfig(model *TransformerConfig) (*mgmtv1alpha1.Transfo
 		dto.Config = &mgmtv1alpha1.TransformerConfig_TransformPhoneNumberConfig{
 			TransformPhoneNumberConfig: &mgmtv1alpha1.TransformPhoneNumber{
 				PreserveLength: model.TransformPhoneNumber.PreserveLength.ValueBool(),
-				IncludeHyphens: model.TransformPhoneNumber.IncludeHyphens.ValueBool(),
 			},
 		}
 	} else if model.TransformString != nil {
@@ -732,7 +732,8 @@ func toTransformerConfigFromDto(dto *mgmtv1alpha1.TransformerConfig) (*Transform
 		tconfig.GenerateStreetAddress = &TransformerEmpty{}
 	case *mgmtv1alpha1.TransformerConfig_GenerateStringPhoneNumberConfig:
 		tconfig.GenerateStringPhoneNumber = &GenerateStringPhoneNumber{
-			IncludeHyphens: types.BoolValue(config.GenerateStringPhoneNumberConfig.IncludeHyphens),
+			Min: types.Int64Value(config.GenerateStringPhoneNumberConfig.Min),
+			Max: types.Int64Value(config.GenerateStringPhoneNumberConfig.Max),
 		}
 	case *mgmtv1alpha1.TransformerConfig_GenerateStringConfig:
 		tconfig.GenerateString = &GenerateString{
@@ -784,7 +785,6 @@ func toTransformerConfigFromDto(dto *mgmtv1alpha1.TransformerConfig) (*Transform
 	case *mgmtv1alpha1.TransformerConfig_TransformPhoneNumberConfig:
 		tconfig.TransformPhoneNumber = &TransformPhoneNumber{
 			PreserveLength: types.BoolValue(config.TransformPhoneNumberConfig.PreserveLength),
-			IncludeHyphens: types.BoolValue(config.TransformPhoneNumberConfig.IncludeHyphens),
 		}
 	case *mgmtv1alpha1.TransformerConfig_TransformStringConfig:
 		tconfig.TransformString = &TransformString{
@@ -993,7 +993,8 @@ type GenerateInt64 struct {
 	Max           types.Int64 `tfsdk:"max"`
 }
 type GenerateStringPhoneNumber struct {
-	IncludeHyphens types.Bool `tfsdk:"include_hyphens"`
+	Min types.Int64 `tfsdk:"min"`
+	Max types.Int64 `tfsdk:"max"`
 }
 type GenerateString struct {
 	Min types.Int64 `tfsdk:"min"`
@@ -1027,7 +1028,6 @@ type TransformLastName struct {
 }
 type TransformPhoneNumber struct {
 	PreserveLength types.Bool `tfsdk:"preserve_length"`
-	IncludeHyphens types.Bool `tfsdk:"include_hyphens"`
 }
 type TransformString struct {
 	PreserveLength types.Bool `tfsdk:"preserve_length"`
@@ -1448,7 +1448,11 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 											Description: "",
 											Optional:    true,
 											Attributes: map[string]schema.Attribute{
-												"include_hyphens": schema.BoolAttribute{
+												"min": schema.Int64Attribute{
+													Description: "",
+													Required:    true,
+												},
+												"max": schema.Int64Attribute{
 													Description: "",
 													Required:    true,
 												},
@@ -1577,10 +1581,6 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 											Optional:    true,
 											Attributes: map[string]schema.Attribute{
 												"preserve_length": schema.BoolAttribute{
-													Description: "",
-													Required:    true,
-												},
-												"include_hyphens": schema.BoolAttribute{
 													Description: "",
 													Required:    true,
 												},
