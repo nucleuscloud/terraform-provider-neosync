@@ -167,7 +167,7 @@ func (p *NeosyncProvider) Resources(ctx context.Context) []func() resource.Resou
 	return []func() resource.Resource{
 		NewConnectionResource,
 		NewJobResource,
-		NewTransformerResource,
+		NewUserDefinedTransformerResource,
 	}
 }
 
@@ -175,6 +175,7 @@ func (p *NeosyncProvider) DataSources(ctx context.Context) []func() datasource.D
 	return []func() datasource.DataSource{
 		NewConnectionDataSource,
 		NewJobDataSource,
+		NewUserDefinedTransformerDataSource,
 	}
 }
 

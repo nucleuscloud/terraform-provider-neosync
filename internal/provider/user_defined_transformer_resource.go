@@ -19,7 +19,7 @@ import (
 var _ resource.Resource = &UserDefinedTransformerResource{}
 var _ resource.ResourceWithImportState = &UserDefinedTransformerResource{}
 
-func NewTransformerResource() resource.Resource {
+func NewUserDefinedTransformerResource() resource.Resource {
 	return &UserDefinedTransformerResource{}
 }
 
