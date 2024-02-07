@@ -1076,41 +1076,41 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 			},
 
 			"source": schema.SingleNestedAttribute{
-				Description: "",
+				Description: "Configuration details about the source data connection",
 				Required:    true,
 				Attributes: map[string]schema.Attribute{
 					"postgres": schema.SingleNestedAttribute{
-						Description: "",
+						Description: "Postgres specific connection configurations",
 						Optional:    true,
 						Attributes: map[string]schema.Attribute{
 							"halt_on_new_column_addition": schema.BoolAttribute{
-								Description: "",
+								Description: "Whether or not to halt the job if it detects a new column that has been added in the source that has not been defined in the mappings schema",
 								Required:    true,
 							},
 							"connection_id": schema.StringAttribute{
-								Description: "",
+								Description: "The unique identifier of the connection that is to be used as the source",
 								Required:    true,
 							},
 							"schemas": schema.ListNestedAttribute{
-								Description: "",
+								Description: "A list of schemas and table specific options",
 								Optional:    true,
 								NestedObject: schema.NestedAttributeObject{
 									Attributes: map[string]schema.Attribute{
 										"schema": schema.StringAttribute{
-											Description: "",
+											Description: "The name of the schema",
 											Required:    true,
 										},
 										"tables": schema.ListNestedAttribute{
-											Description: "",
+											Description: "A list of tables and their specific options within the defined schema",
 											Required:    true,
 											NestedObject: schema.NestedAttributeObject{
 												Attributes: map[string]schema.Attribute{
 													"table": schema.StringAttribute{
-														Description: "",
+														Description: "The name of the table",
 														Required:    true,
 													},
 													"where_clause": schema.StringAttribute{
-														Description: "",
+														Description: "A where clause that will be used to subset the table during sync",
 														Optional:    true,
 													},
 												},
@@ -1122,37 +1122,37 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 						},
 					},
 					"mysql": schema.SingleNestedAttribute{
-						Description: "",
+						Description: "Mysql specific connection configurations",
 						Optional:    true,
 						Attributes: map[string]schema.Attribute{
 							"halt_on_new_column_addition": schema.BoolAttribute{
-								Description: "",
+								Description: "Whether or not to halt the job if it detects a new column that has been added in the source that has not been defined in the mappings schema",
 								Required:    true,
 							},
 							"connection_id": schema.StringAttribute{
-								Description: "",
+								Description: "The unique identifier of the connection that is to be used as the source",
 								Required:    true,
 							},
 							"schemas": schema.ListNestedAttribute{
-								Description: "",
+								Description: "A list of schemas and table specific options",
 								Optional:    true,
 								NestedObject: schema.NestedAttributeObject{
 									Attributes: map[string]schema.Attribute{
 										"schema": schema.StringAttribute{
-											Description: "",
+											Description: "The name of the schema",
 											Required:    true,
 										},
 										"tables": schema.ListNestedAttribute{
-											Description: "",
+											Description: "A list of tables and their specific options within the defined schema",
 											Required:    true,
 											NestedObject: schema.NestedAttributeObject{
 												Attributes: map[string]schema.Attribute{
 													"table": schema.StringAttribute{
-														Description: "",
+														Description: "The name of the table",
 														Required:    true,
 													},
 													"where_clause": schema.StringAttribute{
-														Description: "",
+														Description: "A where clause that will be used to subset the table during sync",
 														Optional:    true,
 													},
 												},
@@ -1164,43 +1164,43 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 						},
 					},
 					"aws_s3": schema.SingleNestedAttribute{
-						Description: "",
+						Description: "AWS S3 specific connection configurations",
 						Optional:    true,
 						Attributes: map[string]schema.Attribute{
 							"connection_id": schema.StringAttribute{
-								Description: "",
+								Description: "The unique identifier of the connection that is to be used as the source",
 								Required:    true,
 							},
 						},
 					},
 					"generate": schema.SingleNestedAttribute{
-						Description: "",
+						Description: "Generate specific connection configurations. Currently only supports single table generation",
 						Optional:    true,
 						Attributes: map[string]schema.Attribute{
 							"fk_source_connection_id": schema.StringAttribute{
-								Description: "",
+								Description: "The unique connection identifier that is used to generate schema specific details. This is usually set to the destination connectio id if it has been upserted with the schema already",
 								Required:    true,
 							},
 							"schemas": schema.ListNestedAttribute{
-								Description: "",
+								Description: "A list of schemas and table specific options",
 								Required:    true,
 								NestedObject: schema.NestedAttributeObject{
 									Attributes: map[string]schema.Attribute{
 										"schema": schema.StringAttribute{
-											Description: "",
+											Description: "The name of the schema",
 											Required:    true,
 										},
 										"tables": schema.ListNestedAttribute{
-											Description: "",
+											Description: "A list of tables and their specific options within the defined schema",
 											Required:    true,
 											NestedObject: schema.NestedAttributeObject{
 												Attributes: map[string]schema.Attribute{
 													"table": schema.StringAttribute{
-														Description: "",
+														Description: "The name of the table",
 														Required:    true,
 													},
 													"row_count": schema.Int64Attribute{
-														Description: "",
+														Description: "The number of rows to generate into the table",
 														Optional:    true,
 													},
 												},
@@ -1214,65 +1214,65 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 				},
 			},
 			"destinations": schema.ListNestedAttribute{
-				Description: "",
+				Description: "A list of destination connections and any relevant configurations that are available to them dependent on type",
 				Required:    true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"id": schema.StringAttribute{
-							Description: "",
+							Description: "The unique identifier of the destination resource. This is set after creation",
 							Optional:    true,
 							Computed:    true,
 						},
 						"connection_id": schema.StringAttribute{
-							Description: "",
+							Description: "The unique identifier of the connection that will be used during the synchronization process",
 							Optional:    true, // required if id is not set
 						},
 						"postgres": schema.SingleNestedAttribute{
-							Description: "",
+							Description: "Postgres connection specific options",
 							Optional:    true,
 							Attributes: map[string]schema.Attribute{
 								"truncate_table": schema.SingleNestedAttribute{
-									Description: "",
+									Description: "Details about what truncation should occur",
 									Optional:    true,
 									Attributes: map[string]schema.Attribute{
 										"truncate_before_insert": schema.BoolAttribute{
-											Description: "",
+											Description: "Will truncate the table prior to insertion of any records",
 											Optional:    true,
 										},
 										"cascade": schema.BoolAttribute{
-											Description: "",
+											Description: "Will truncate cascade. This is required if the table holds any foreign key constraints. If this is true, truncate_before_insert must also be true",
 											Optional:    true,
 										},
 									},
 								},
 								"init_table_schema": schema.BoolAttribute{
-									Description: "",
+									Description: "Whether or not to have neosync init the table schema and constraints it pulled from the source connection",
 									Required:    true,
 								},
 							},
 						},
 						"mysql": schema.SingleNestedAttribute{
-							Description: "",
+							Description: "Mysql connection specific options",
 							Optional:    true,
 							Attributes: map[string]schema.Attribute{
 								"truncate_table": schema.SingleNestedAttribute{
-									Description: "",
+									Description: "Details about what truncation should occur",
 									Optional:    true,
 									Attributes: map[string]schema.Attribute{
 										"truncate_before_insert": schema.BoolAttribute{
-											Description: "",
+											Description: "Will truncate the table prior to insertion of any records",
 											Optional:    true,
 										},
 									},
 								},
 								"init_table_schema": schema.BoolAttribute{
-									Description: "",
+									Description: "Whether or not to have neosync init the table schema and constraints it pulled from the source connection",
 									Required:    true,
 								},
 							},
 						},
 						"aws_s3": schema.SingleNestedAttribute{
-							Description: "",
+							Description: "AWS S3 connection specific options",
 							Optional:    true,
 							Attributes:  map[string]schema.Attribute{},
 						},
@@ -1280,28 +1280,28 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 				},
 			},
 			"mappings": schema.ListNestedAttribute{
-				Description: "",
+				Description: "Details each schema,table,column along with the transformation that will be executed",
 				Optional:    true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"schema": schema.StringAttribute{
-							Description: "",
+							Description: "The database schema",
 							Required:    true,
 						},
 						"table": schema.StringAttribute{
-							Description: "",
+							Description: "The database table",
 							Required:    true,
 						},
 						"column": schema.StringAttribute{
-							Description: "",
+							Description: "The column in the specified table",
 							Required:    true,
 						},
 						"transformer": schema.SingleNestedAttribute{
-							Description: "",
+							Description: "The transformer that will be performed on the column",
 							Required:    true,
 							Attributes: map[string]schema.Attribute{
 								"source": schema.StringAttribute{
-									Description: "",
+									Description: "The source of the transformer that will be used",
 									Required:    true,
 								},
 								"config": transformerSchema,
@@ -1317,23 +1317,23 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 			},
 
 			"sync_options": schema.SingleNestedAttribute{
-				Description: "",
+				Description: "Advanced settings and other options specific to a table sync",
 				Optional:    true,
 				Attributes: map[string]schema.Attribute{
 					"schedule_to_close_timeout": schema.Int64Attribute{
-						Description: "",
+						Description: "The maximum amount of time allotted for a table sync with retries",
 						Optional:    true,
 					},
 					"start_to_close_timeout": schema.Int64Attribute{
-						Description: "",
+						Description: "The amount of time allotted for a table sync",
 						Optional:    true,
 					},
 					"retry_policy": schema.SingleNestedAttribute{
-						Description: "",
+						Description: "The table sync retry policy",
 						Optional:    true,
 						Attributes: map[string]schema.Attribute{
 							"maximum_attempts": schema.Int64Attribute{
-								Description: "",
+								Description: "The maximum number of times to retry if there is a failure or timeout",
 								Optional:    true,
 							},
 						},
@@ -1341,11 +1341,11 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 				},
 			},
 			"workflow_options": schema.SingleNestedAttribute{
-				Description: "",
+				Description: "Advanced settings and other options specific to a job run",
 				Optional:    true,
 				Attributes: map[string]schema.Attribute{
 					"run_timeout": schema.Int64Attribute{
-						Description: "",
+						Description: "The max amount of time a job run is allotted",
 						Optional:    true,
 					},
 				},
