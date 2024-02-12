@@ -90,9 +90,7 @@ jobs:
   notify:
     needs: [build, test]
     runs-on: ubuntu-latest
-    if: >
-      always() &&
-      github.event_name == 'schedule'
+    if: always()
     steps:
       - name: Send notification to Slack
         uses: rtCamp/action-slack-notify@v2
