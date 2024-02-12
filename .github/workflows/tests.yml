@@ -10,6 +10,9 @@ on:
   push:
     paths-ignore:
       - "README.md"
+  schedule:
+    # Runs every day at 9 AM Pacific Time (when PT is UTC-8)
+    - cron: "0 17 * * *"
 
 # Testing only needs permissions to read the repository contents.
 permissions:
@@ -83,3 +86,20 @@ jobs:
           NEOSYNC_ACCOUNT_ID: ${{ vars.NEOSYNC_ACCOUNT_ID }}
         run: go test -v -cover ./internal/provider/
         timeout-minutes: 10
+
+  notify:
+    needs: [build, test]
+    runs-on: ubuntu-latest
+    if: >
+      always() &&
+      github.event_name == 'schedule'
+    steps:
+      - name: Send notification to Slack
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.TEST_NOTIFY_SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: ${{ job.status }}
+          SLACK_MESSAGE: "Check the run here: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          SLACK_TITLE: "Neosync Terraform Provider scheduled tests ended with: ${{ job.status }}"
+          SLACK_FOOTER: ""
+          SLACK_USERNAME: "Neosync Test Bot"
