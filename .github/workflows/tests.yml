@@ -99,7 +99,7 @@ jobs:
         env:
           SLACK_WEBHOOK: ${{ secrets.TEST_NOTIFY_SLACK_WEBHOOK_URL }}
           SLACK_COLOR: ${{ job.status }}
-          SLACK_MESSAGE: "Check the failure here: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} :x:"
-          SLACK_TITLE: "Neosync Terraform Provider scheduled tests: ${{ job.status }}!"
+          SLACK_MESSAGE: "Check the run here: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} :x:"
+          SLACK_TITLE: "Neosync Terraform Provider scheduled tests ended with: ${{ job.status }}"
           SLACK_FOOTER: ""
           SLACK_USERNAME: "Neosync Test Bot"
