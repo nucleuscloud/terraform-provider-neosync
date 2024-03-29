@@ -50,7 +50,6 @@ resource "neosync_user_defined_transformer" "my_transformer" {
 ### Required
 
 - `config` (Attributes) This config object consists of the matching configuration defined with the source specified. (see [below for nested schema](#nestedatt--config))
-- `datatype` (String) The datatype of the transformer
 - `description` (String) The description of the transformer
 - `name` (String) The unique friendly name of the transformer
 - `source` (String) The system transformer that this user defined transformer is based off of. This is the same value that is specified as the key in the config
