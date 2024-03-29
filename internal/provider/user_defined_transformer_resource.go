@@ -32,7 +32,6 @@ type UserDefinedTransformerResourceModel struct {
 	Id          types.String       `tfsdk:"id"`
 	Name        types.String       `tfsdk:"name"`
 	Description types.String       `tfsdk:"description"`
-	Datatype    types.String       `tfsdk:"datatype"`
 	Source      types.String       `tfsdk:"source"`
 	Config      *TransformerConfig `tfsdk:"config"`
 	AccountId   types.String       `tfsdk:"account_id"`
@@ -54,10 +53,6 @@ func (r *UserDefinedTransformerResource) Schema(ctx context.Context, req resourc
 			},
 			"description": schema.StringAttribute{
 				Description: "The description of the transformer",
-				Required:    true,
-			},
-			"datatype": schema.StringAttribute{
-				Description: "The datatype of the transformer",
 				Required:    true,
 			},
 			"source": schema.StringAttribute{
@@ -138,7 +133,6 @@ func (r *UserDefinedTransformerResource) Create(ctx context.Context, req resourc
 		AccountId:         dto.AccountId,
 		Name:              dto.Name,
 		Description:       dto.Description,
-		Type:              dto.DataType,
 		Source:            dto.Source,
 		TransformerConfig: dto.Config,
 	}))
@@ -290,8 +284,7 @@ func fromTransformerDto(dto *mgmtv1alpha1.UserDefinedTransformer) (*UserDefinedT
 		Name:        types.StringValue(dto.Name),
 		AccountId:   types.StringValue(dto.AccountId),
 		Description: types.StringValue(dto.Description),
-		Datatype:    types.StringValue(dto.DataType),
-		Source:      types.StringValue(dto.Source),
+		Source:      types.StringValue(transformerSourceToStateSource(dto.Source)),
 		Config:      configModel,
 	}
 	return model, nil
@@ -310,8 +303,7 @@ func toTransformerDto(model *UserDefinedTransformerResourceModel) (*mgmtv1alpha1
 		Name:        model.Name.ValueString(),
 		AccountId:   model.AccountId.ValueString(),
 		Description: model.Description.ValueString(),
-		DataType:    model.Datatype.ValueString(),
-		Source:      model.Source.ValueString(),
+		Source:      stateSourceToTransformerSource(model.Source.ValueString()),
 		Config:      configDto,
 	}
 	return dto, nil

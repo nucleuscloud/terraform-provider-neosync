@@ -278,7 +278,7 @@ func fromModelJobMappings(input []*JobMapping) ([]*mgmtv1alpha1.JobMapping, erro
 			Table:  inputMapping.Table.ValueString(),
 			Column: inputMapping.Column.ValueString(),
 			Transformer: &mgmtv1alpha1.JobMappingTransformer{
-				Source: inputMapping.Transformer.Source.ValueString(),
+				Source: stateSourceToTransformerSource(inputMapping.Transformer.Source.ValueString()),
 				Config: &mgmtv1alpha1.TransformerConfig{},
 			},
 		}
@@ -424,7 +424,7 @@ func fromJobDto(dto *mgmtv1alpha1.Job) (*JobResourceModel, error) {
 			Table:  types.StringValue(dtoMapping.Table),
 			Column: types.StringValue(dtoMapping.Column),
 			Transformer: &Transformer{
-				Source: types.StringValue(dtoMapping.Transformer.Source),
+				Source: types.StringValue(transformerSourceToStateSource(dtoMapping.Transformer.Source)),
 				Config: tconfig,
 			},
 		}
