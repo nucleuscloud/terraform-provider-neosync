@@ -15,7 +15,6 @@ func TestAcc_Ud_Transformer_DataSource(t *testing.T) {
 resource "neosync_user_defined_transformer" "test1" {
   name = "%s"
 	description = "this is a test"
-	datatype = "int64"
 	source = "generate_card_number"
 	config = {
 		"generate_card_number" = {

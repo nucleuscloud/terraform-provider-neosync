@@ -55,7 +55,7 @@ func (d *SystemTransformerDataSource) Schema(ctx context.Context, req datasource
 				Description: "The description of the transformer",
 				Computed:    true,
 			},
-			"datatype": schema.StringAttribute{
+			"datatype": schema.Int64Attribute{
 				Description: "The datatype of the transformer",
 				Computed:    true,
 			},
@@ -170,5 +170,5 @@ func transformerSourceToStateSource(source mgmtv1alpha1.TransformerSource) strin
 	if !ok {
 		return "unspecified"
 	}
-	return name
+	return strings.ToLower(strings.TrimPrefix(name, "TRANSFORMER_SOURCE_"))
 }
