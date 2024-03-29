@@ -28,7 +28,7 @@ type SystemTransformerDataSource struct {
 type SystemTransformerDataSourceModel struct {
 	Name        types.String       `tfsdk:"name"`
 	Description types.String       `tfsdk:"description"`
-	Datatype    types.String       `tfsdk:"datatype"`
+	Datatype    types.Int64        `tfsdk:"datatype"`
 	Source      types.String       `tfsdk:"source"`
 	Config      *TransformerConfig `tfsdk:"config"`
 }
@@ -55,7 +55,7 @@ func (d *SystemTransformerDataSource) Schema(ctx context.Context, req datasource
 				Description: "The description of the transformer",
 				Computed:    true,
 			},
-			"datatype": schema.StringAttribute{
+			"datatype": schema.Int64Attribute{
 				Description: "The datatype of the transformer",
 				Computed:    true,
 			},
@@ -107,9 +107,10 @@ func (d *SystemTransformerDataSource) Read(ctx context.Context, req datasource.R
 	transformers := transResp.Msg.Transformers
 	transformerMap := getTransformerBySource(transformers)
 
-	transformer, ok := transformerMap[data.Source.ValueString()]
+	source := stateSourceToTransformerSource(data.Source.ValueString())
+	transformer, ok := transformerMap[source]
 	if !ok {
-		resp.Diagnostics.AddError("unable to find transformer by source", fmt.Sprintf("available sources: %s", strings.Join(getMapKeys(transformerMap), ",")))
+		resp.Diagnostics.AddError("unable to find transformer by source", fmt.Sprintf("available sources: %s", strings.Join(getTransformerMapkeys(transformerMap), ",")))
 		return
 	}
 
@@ -121,25 +122,53 @@ func (d *SystemTransformerDataSource) Read(ctx context.Context, req datasource.R
 
 	data.Name = types.StringValue(transformer.Name)
 	data.Description = types.StringValue(transformer.Description)
-	data.Datatype = types.StringValue(transformer.DataType)
+	data.Datatype = types.Int64Value(int64(transformer.DataType))
+	data.Source = types.StringValue(transformerSourceToStateSource(transformer.Source))
 	data.Config = modelConfig
 	tflog.Trace(ctx, "read system transformer", map[string]any{"source": data.Source.ValueString()})
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func getTransformerBySource(transformers []*mgmtv1alpha1.SystemTransformer) map[string]*mgmtv1alpha1.SystemTransformer {
-	output := map[string]*mgmtv1alpha1.SystemTransformer{}
+func getTransformerBySource(transformers []*mgmtv1alpha1.SystemTransformer) map[mgmtv1alpha1.TransformerSource]*mgmtv1alpha1.SystemTransformer {
+	output := map[mgmtv1alpha1.TransformerSource]*mgmtv1alpha1.SystemTransformer{}
 	for _, transformer := range transformers {
 		output[transformer.Source] = transformer
 	}
 	return output
 }
 
-func getMapKeys[T any](input map[string]T) []string {
+func getTransformerMapkeys[T any](input map[mgmtv1alpha1.TransformerSource]T) []string {
 	output := []string{}
 	for key := range input {
-		output = append(output, key)
+		name, ok := mgmtv1alpha1.TransformerSource_name[int32(key)]
+		if ok {
+			output = append(output, name)
+		}
 	}
 	return output
+}
+
+func stateSourceToTransformerSource(source string) mgmtv1alpha1.TransformerSource {
+	if source == "null" {
+		source = "generate_null"
+	}
+	if source == "custom" {
+		source = "user_defined"
+	}
+	key := fmt.Sprintf("TRANSFORMER_SOURCE_%s", strings.ToUpper(source))
+
+	value, ok := mgmtv1alpha1.TransformerSource_value[key]
+	if !ok {
+		return mgmtv1alpha1.TransformerSource_TRANSFORMER_SOURCE_UNSPECIFIED
+	}
+	return mgmtv1alpha1.TransformerSource(value)
+}
+
+func transformerSourceToStateSource(source mgmtv1alpha1.TransformerSource) string {
+	name, ok := mgmtv1alpha1.TransformerSource_name[int32(source)]
+	if !ok {
+		return "unspecified"
+	}
+	return strings.ToLower(strings.TrimPrefix(name, "TRANSFORMER_SOURCE_"))
 }

@@ -32,7 +32,7 @@ output "cc_config" {
 ### Read-Only
 
 - `config` (Attributes) Default values for each system transformer. Can be used to feed into any values intended to remain unchanged for any user defined transformer (see [below for nested schema](#nestedatt--config))
-- `datatype` (String) The datatype of the transformer
+- `datatype` (Number) The datatype of the transformer
 - `description` (String) The description of the transformer
 - `name` (String) The unique name of the transformer
 

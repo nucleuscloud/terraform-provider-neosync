@@ -98,8 +98,8 @@ jobs:
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.TEST_NOTIFY_SLACK_WEBHOOK_URL }}
-          SLACK_COLOR: ${{ job.status }}
-          SLACK_MESSAGE: "Check the run here: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          SLACK_TITLE: "Neosync Terraform Provider scheduled tests ended with: ${{ job.status }}"
+          SLACK_COLOR: ${{ (needs.build.result == 'success' && needs.test.result == 'success') && 'good' || 'danger' }}
+          SLACK_MESSAGE: "Build Job Status: ${{ needs.build.result }}. Test Job Status: ${{ needs.test.result }}. Check the run here: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          SLACK_TITLE: "Neosync Terraform Provider scheduled tests - Build: ${{ needs.build.result }}, Test: ${{ needs.test.result }}"
           SLACK_FOOTER: ""
           SLACK_USERNAME: "Neosync Test Bot"
