@@ -1314,6 +1314,7 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 			"cron_schedule": schema.StringAttribute{
 				Description: "A cron string for how often it's desired to schedule the job to run",
 				Optional:    true,
+				Computed:    true,
 			},
 
 			"sync_options": schema.SingleNestedAttribute{
