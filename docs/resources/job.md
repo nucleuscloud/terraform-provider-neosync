@@ -312,11 +312,11 @@ Optional:
 - `user_defined_transformer` (Attributes) (see [below for nested schema](#nestedatt--mappings--transformer--config--user_defined_transformer))
 
 <a id="nestedatt--mappings--transformer--config--generate_bool"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.generate_bool`
 
 
 <a id="nestedatt--mappings--transformer--config--generate_card_number"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.generate_card_number`
 
 Required:
 
@@ -324,7 +324,7 @@ Required:
 
 
 <a id="nestedatt--mappings--transformer--config--generate_categorical"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.generate_categorical`
 
 Required:
 
@@ -332,15 +332,15 @@ Required:
 
 
 <a id="nestedatt--mappings--transformer--config--generate_city"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.generate_city`
 
 
 <a id="nestedatt--mappings--transformer--config--generate_default"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.generate_default`
 
 
 <a id="nestedatt--mappings--transformer--config--generate_e164_phone_number"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.generate_e164_phone_number`
 
 Required:
 
@@ -349,15 +349,15 @@ Required:
 
 
 <a id="nestedatt--mappings--transformer--config--generate_email"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.generate_email`
 
 
 <a id="nestedatt--mappings--transformer--config--generate_firstname"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.generate_firstname`
 
 
 <a id="nestedatt--mappings--transformer--config--generate_float64"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.generate_float64`
 
 Required:
 
@@ -368,15 +368,15 @@ Required:
 
 
 <a id="nestedatt--mappings--transformer--config--generate_full_address"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.generate_full_address`
 
 
 <a id="nestedatt--mappings--transformer--config--generate_fullname"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.generate_fullname`
 
 
 <a id="nestedatt--mappings--transformer--config--generate_gender"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.generate_gender`
 
 Required:
 
@@ -384,7 +384,7 @@ Required:
 
 
 <a id="nestedatt--mappings--transformer--config--generate_int64"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.generate_int64`
 
 Required:
 
@@ -394,31 +394,31 @@ Required:
 
 
 <a id="nestedatt--mappings--transformer--config--generate_int64_phone_number"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.generate_int64_phone_number`
 
 
 <a id="nestedatt--mappings--transformer--config--generate_lastname"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.generate_lastname`
 
 
 <a id="nestedatt--mappings--transformer--config--generate_sha256"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.generate_sha256`
 
 
 <a id="nestedatt--mappings--transformer--config--generate_ssn"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.generate_ssn`
 
 
 <a id="nestedatt--mappings--transformer--config--generate_state"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.generate_state`
 
 
 <a id="nestedatt--mappings--transformer--config--generate_street_address"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.generate_street_address`
 
 
 <a id="nestedatt--mappings--transformer--config--generate_string"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.generate_string`
 
 Required:
 
@@ -427,7 +427,7 @@ Required:
 
 
 <a id="nestedatt--mappings--transformer--config--generate_string_phone_number"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.generate_string_phone_number`
 
 Required:
 
@@ -436,19 +436,19 @@ Required:
 
 
 <a id="nestedatt--mappings--transformer--config--generate_unix_timestamp"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.generate_unix_timestamp`
 
 
 <a id="nestedatt--mappings--transformer--config--generate_username"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.generate_username`
 
 
 <a id="nestedatt--mappings--transformer--config--generate_utc_timestamp"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.generate_utc_timestamp`
 
 
 <a id="nestedatt--mappings--transformer--config--generate_uuid"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.generate_uuid`
 
 Required:
 
@@ -456,23 +456,23 @@ Required:
 
 
 <a id="nestedatt--mappings--transformer--config--generate_zipcode"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.generate_zipcode`
 
 
 <a id="nestedatt--mappings--transformer--config--null"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.null`
 
 
 <a id="nestedatt--mappings--transformer--config--passthrough"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.passthrough`
 
 
 <a id="nestedatt--mappings--transformer--config--transform_character_scramble"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.transform_character_scramble`
 
 
 <a id="nestedatt--mappings--transformer--config--transform_e164_phone_number"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.transform_e164_phone_number`
 
 Required:
 
@@ -480,7 +480,7 @@ Required:
 
 
 <a id="nestedatt--mappings--transformer--config--transform_email"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.transform_email`
 
 Required:
 
@@ -489,7 +489,7 @@ Required:
 
 
 <a id="nestedatt--mappings--transformer--config--transform_firstname"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.transform_firstname`
 
 Required:
 
@@ -497,7 +497,7 @@ Required:
 
 
 <a id="nestedatt--mappings--transformer--config--transform_float64"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.transform_float64`
 
 Required:
 
@@ -506,7 +506,7 @@ Required:
 
 
 <a id="nestedatt--mappings--transformer--config--transform_fullname"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.transform_fullname`
 
 Required:
 
@@ -514,7 +514,7 @@ Required:
 
 
 <a id="nestedatt--mappings--transformer--config--transform_int64"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.transform_int64`
 
 Required:
 
@@ -523,7 +523,7 @@ Required:
 
 
 <a id="nestedatt--mappings--transformer--config--transform_int64_phone_number"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.transform_int64_phone_number`
 
 Required:
 
@@ -531,7 +531,7 @@ Required:
 
 
 <a id="nestedatt--mappings--transformer--config--transform_javascript"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.transform_javascript`
 
 Required:
 
@@ -539,7 +539,7 @@ Required:
 
 
 <a id="nestedatt--mappings--transformer--config--transform_lastname"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.transform_lastname`
 
 Required:
 
@@ -547,7 +547,7 @@ Required:
 
 
 <a id="nestedatt--mappings--transformer--config--transform_phone_number"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.transform_phone_number`
 
 Required:
 
@@ -555,7 +555,7 @@ Required:
 
 
 <a id="nestedatt--mappings--transformer--config--transform_string"></a>
-### Nested Schema for `mappings.transformer.config.user_defined_transformer`
+### Nested Schema for `mappings.transformer.config.transform_string`
 
 Required:
 
