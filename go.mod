@@ -3,7 +3,7 @@ module github.com/nucleuscloud/terraform-provider-neosync
 go 1.21.3
 
 require (
-	connectrpc.com/connect v1.16.0
+	connectrpc.com/connect v1.16.2
 	github.com/hashicorp/terraform-plugin-docs v0.18.0
 	github.com/hashicorp/terraform-plugin-framework v1.8.0
 	github.com/hashicorp/terraform-plugin-go v0.22.2

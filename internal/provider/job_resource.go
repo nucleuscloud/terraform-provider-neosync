@@ -1492,10 +1492,23 @@ func (r *JobResource) Update(ctx context.Context, req resource.UpdateRequest, re
 			return
 		}
 	}
-	_, err := r.client.UpdateJobSourceConnection(ctx, connect.NewRequest(&mgmtv1alpha1.UpdateJobSourceConnectionRequest{
+
+	newSource, err := fromModelJobSource(planModel.JobSource)
+	if err != nil {
+		resp.Diagnostics.AddError("unable to map new job source", err.Error())
+		return
+	}
+
+	newMappings, err := fromModelJobMappings(planModel.Mappings)
+	if err != nil {
+		resp.Diagnostics.AddError("unable to map new job mappings", err.Error())
+		return
+	}
+
+	_, err = r.client.UpdateJobSourceConnection(ctx, connect.NewRequest(&mgmtv1alpha1.UpdateJobSourceConnectionRequest{
 		Id:       planModel.Id.ValueString(),
-		Source:   nil,
-		Mappings: nil,
+		Source:   newSource,
+		Mappings: newMappings,
 	}))
 	if err != nil {
 		resp.Diagnostics.AddError("unable to update job source connection", err.Error())
