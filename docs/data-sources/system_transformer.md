@@ -14,6 +14,7 @@ Neosync System Transformer data source
 
 ```terraform
 data "neosync_system_transformer" "generate_cc" {
+  # This is the value of the TransformerSource enumeration defined in the proto, but with the TRANSFORMER_SOURCE_ prefix removed.
   source = "generate_card_number"
 }
 

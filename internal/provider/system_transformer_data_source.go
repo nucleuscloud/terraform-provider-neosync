@@ -98,22 +98,15 @@ func (d *SystemTransformerDataSource) Read(ctx context.Context, req datasource.R
 		return
 	}
 
-	transResp, err := d.client.GetSystemTransformers(ctx, connect.NewRequest(&mgmtv1alpha1.GetSystemTransformersRequest{}))
+	transResp, err := d.client.GetSystemTransformerBySource(ctx, connect.NewRequest(&mgmtv1alpha1.GetSystemTransformerBySourceRequest{
+		Source: stateSourceToTransformerSource(data.Source.ValueString()),
+	}))
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to get system transformers", err.Error())
+		resp.Diagnostics.AddError("Unable to get system transformer", err.Error())
 		return
 	}
 
-	transformers := transResp.Msg.Transformers
-	transformerMap := getTransformerBySource(transformers)
-
-	source := stateSourceToTransformerSource(data.Source.ValueString())
-	transformer, ok := transformerMap[source]
-	if !ok {
-		resp.Diagnostics.AddError("unable to find transformer by source", fmt.Sprintf("available sources: %s", strings.Join(getTransformerMapkeys(transformerMap), ",")))
-		return
-	}
-
+	transformer := transResp.Msg.GetTransformer()
 	modelConfig, err := toTransformerConfigFromDto(transformer.Config)
 	if err != nil {
 		resp.Diagnostics.AddError("unable to convert dto transformer config to model", err.Error())
@@ -128,25 +121,6 @@ func (d *SystemTransformerDataSource) Read(ctx context.Context, req datasource.R
 	tflog.Trace(ctx, "read system transformer", map[string]any{"source": data.Source.ValueString()})
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-}
-
-func getTransformerBySource(transformers []*mgmtv1alpha1.SystemTransformer) map[mgmtv1alpha1.TransformerSource]*mgmtv1alpha1.SystemTransformer {
-	output := map[mgmtv1alpha1.TransformerSource]*mgmtv1alpha1.SystemTransformer{}
-	for _, transformer := range transformers {
-		output[transformer.Source] = transformer
-	}
-	return output
-}
-
-func getTransformerMapkeys[T any](input map[mgmtv1alpha1.TransformerSource]T) []string {
-	output := []string{}
-	for key := range input {
-		name, ok := mgmtv1alpha1.TransformerSource_name[int32(key)]
-		if ok {
-			output = append(output, name)
-		}
-	}
-	return output
 }
 
 func stateSourceToTransformerSource(source string) mgmtv1alpha1.TransformerSource {
