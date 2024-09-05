@@ -1072,7 +1072,7 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 				Description:   "The unique identifier of the account. Can be pulled from the API Key if present, or must be specified if using a user access token",
 				Optional:      true,
 				Computed:      true,
-				PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
+				PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplaceIfConfigured()},
 			},
 
 			"source": schema.SingleNestedAttribute{
