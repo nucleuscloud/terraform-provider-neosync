@@ -32,3 +32,30 @@ func mustHaveEnv(t *testing.T, name string) {
 		t.Fatalf("%s environment variable must be set for acceptance tests", name)
 	}
 }
+
+// Retrieves the account_id from state during a terraform check. Mutates the input accountId
+func GetAccountIdFromState(resource string, onAccountId func(accountId string)) func(s *terraform.State) error {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resource]
+		if !ok {
+			return fmt.Errorf("Not found: %s", resource)
+		}
+		accId := rs.Primary.Attributes["account_id"]
+		onAccountId(accId)
+		return nil
+	}
+}
+
+func GetTestAccountIdFromStateFn(resource string, getAccountId func() string) func(s *terraform.State) error {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resource]
+		if !ok {
+			return fmt.Errorf("Not found: %s", resource)
+		}
+		accountId := getAccountId()
+		if rs.Primary.Attributes["account_id"] != accountId {
+			return fmt.Errorf("account_id changed unexpectedly. Was %s, now %s", accountId, rs.Primary.Attributes["account_id"])
+		}
+		return nil
+	}
+}
