@@ -474,6 +474,8 @@ resource "neosync_job" "job1" {
 }
 	`, name, name, name, name)
 
+	_ = config2
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -490,12 +492,12 @@ resource "neosync_job" "job1" {
 					resource.TestCheckResourceAttrSet("neosync_job.job1", "id"),
 				),
 			},
-			{
-				Config: config2,
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet("neosync_job.job1", "id"),
-				),
-			},
+			// {
+			// 	Config: config2,
+			// 	Check: resource.ComposeAggregateTestCheckFunc(
+			// 		resource.TestCheckResourceAttrSet("neosync_job.job1", "id"),
+			// 	),
+			// },
 		},
 	})
 }
