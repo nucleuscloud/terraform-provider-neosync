@@ -31,6 +31,8 @@ resource "neosync_connection" "test1" {
 }
 `, connectionName)
 
+	var accountID string
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -41,12 +43,14 @@ resource "neosync_connection" "test1" {
 					resource.TestCheckResourceAttrSet("neosync_connection.test1", "id"),
 					resource.TestCheckResourceAttr("neosync_connection.test1", "name", connectionName),
 					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.url", "test-url"),
+					GetAccountIdFromState("neosync_connection.test1", func(accountId string) { accountID = accountId }),
 				),
 			},
 			{
 				Config: testAccConnectionConfigUpdated,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.url", "test-url2"),
+					GetTestAccountIdFromStateFn("neosync_connection.test1", func() string { return accountID }),
 				),
 			},
 		},

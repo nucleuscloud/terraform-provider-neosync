@@ -36,6 +36,8 @@ resource "neosync_user_defined_transformer" "test1" {
 }
 `, name)
 
+	var accountID string
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -44,20 +46,24 @@ resource "neosync_user_defined_transformer" "test1" {
 				Config: testAccConnectionConfig,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("neosync_user_defined_transformer.test1", "id"),
+					resource.TestCheckResourceAttrSet("neosync_user_defined_transformer.test1", "account_id"),
 					resource.TestCheckResourceAttr("neosync_user_defined_transformer.test1", "name", name),
 					resource.TestCheckResourceAttr("neosync_user_defined_transformer.test1", "description", "this is a test"),
 					resource.TestCheckResourceAttr("neosync_user_defined_transformer.test1", "source", "generate_card_number"),
 					resource.TestCheckResourceAttr("neosync_user_defined_transformer.test1", "config.generate_card_number.valid_luhn", "true"),
+					GetAccountIdFromState("neosync_user_defined_transformer.test1", func(accountId string) { accountID = accountId }),
 				),
 			},
 			{
 				Config: testAccConnectionConfigUpdated,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("neosync_user_defined_transformer.test1", "id"),
+					resource.TestCheckResourceAttrSet("neosync_user_defined_transformer.test1", "account_id"),
 					resource.TestCheckResourceAttr("neosync_user_defined_transformer.test1", "name", name),
 					resource.TestCheckResourceAttr("neosync_user_defined_transformer.test1", "description", "this is a test2"),
 					resource.TestCheckResourceAttr("neosync_user_defined_transformer.test1", "source", "generate_card_number"),
 					resource.TestCheckResourceAttr("neosync_user_defined_transformer.test1", "config.generate_card_number.valid_luhn", "false"),
+					GetTestAccountIdFromStateFn("neosync_user_defined_transformer.test1", func() string { return accountID }),
 				),
 			},
 		},
