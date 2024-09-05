@@ -145,7 +145,7 @@ func (r *ConnectionResource) Schema(ctx context.Context, req resource.SchemaRequ
 				Description:   "The unique identifier of the account. Can be pulled from the API Key if present, or must be specified if using a user access token",
 				Optional:      true,
 				Computed:      true,
-				PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
+				PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplaceIfConfigured()},
 			},
 			"postgres": schema.SingleNestedAttribute{
 				Description: "The postgres database that will be associated with this connection",

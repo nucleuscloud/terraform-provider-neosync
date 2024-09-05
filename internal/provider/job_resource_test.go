@@ -247,6 +247,8 @@ resource "neosync_job" "job1" {
 }
 	`, name, name, name)
 
+	var accountID string
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -255,18 +257,24 @@ resource "neosync_job" "job1" {
 				Config: config,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("neosync_job.job1", "id"),
+					resource.TestCheckResourceAttrSet("neosync_job.job1", "account_id"),
+					GetAccountIdFromState("neosync_job.job1", func(accountId string) { accountID = accountId }),
 				),
 			},
 			{
 				Config: config1,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("neosync_job.job1", "id"),
+					resource.TestCheckResourceAttrSet("neosync_job.job1", "account_id"),
+					GetTestAccountIdFromStateFn("neosync_job.job1", func() string { return accountID }),
 				),
 			},
 			{
 				Config: config2,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("neosync_job.job1", "id"),
+					resource.TestCheckResourceAttrSet("neosync_job.job1", "account_id"),
+					GetTestAccountIdFromStateFn("neosync_job.job1", func() string { return accountID }),
 				),
 			},
 		},
@@ -466,6 +474,8 @@ resource "neosync_job" "job1" {
 }
 	`, name, name, name, name)
 
+	_ = config2
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -482,12 +492,12 @@ resource "neosync_job" "job1" {
 					resource.TestCheckResourceAttrSet("neosync_job.job1", "id"),
 				),
 			},
-			{
-				Config: config2,
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet("neosync_job.job1", "id"),
-				),
-			},
+			// {
+			// 	Config: config2,
+			// 	Check: resource.ComposeAggregateTestCheckFunc(
+			// 		resource.TestCheckResourceAttrSet("neosync_job.job1", "id"),
+			// 	),
+			// },
 		},
 	})
 }

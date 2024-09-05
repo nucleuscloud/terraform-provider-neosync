@@ -1072,7 +1072,7 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 				Description:   "The unique identifier of the account. Can be pulled from the API Key if present, or must be specified if using a user access token",
 				Optional:      true,
 				Computed:      true,
-				PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
+				PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplaceIfConfigured()},
 			},
 
 			"source": schema.SingleNestedAttribute{
@@ -1219,9 +1219,10 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"id": schema.StringAttribute{
-							Description: "The unique identifier of the destination resource. This is set after creation",
-							Optional:    true,
-							Computed:    true,
+							Description:   "The unique identifier of the destination resource. This is set after creation",
+							Optional:      true,
+							Computed:      true,
+							PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 						},
 						"connection_id": schema.StringAttribute{
 							Description: "The unique identifier of the connection that will be used during the synchronization process",
