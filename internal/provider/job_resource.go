@@ -278,7 +278,6 @@ func fromModelJobMappings(input []*JobMapping) ([]*mgmtv1alpha1.JobMapping, erro
 			Table:  inputMapping.Table.ValueString(),
 			Column: inputMapping.Column.ValueString(),
 			Transformer: &mgmtv1alpha1.JobMappingTransformer{
-				Source: stateSourceToTransformerSource(inputMapping.Transformer.Source.ValueString()),
 				Config: &mgmtv1alpha1.TransformerConfig{},
 			},
 		}
@@ -424,7 +423,6 @@ func fromJobDto(dto *mgmtv1alpha1.Job) (*JobResourceModel, error) {
 			Table:  types.StringValue(dtoMapping.Table),
 			Column: types.StringValue(dtoMapping.Column),
 			Transformer: &Transformer{
-				Source: types.StringValue(transformerSourceToStateSource(dtoMapping.Transformer.Source)),
 				Config: tconfig,
 			},
 		}
@@ -919,7 +917,6 @@ type JobMapping struct {
 	Transformer *Transformer `tfsdk:"transformer"`
 }
 type Transformer struct {
-	Source types.String       `tfsdk:"source"`
 	Config *TransformerConfig `tfsdk:"config"`
 }
 
@@ -1301,10 +1298,6 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 							Description: "The transformer that will be performed on the column",
 							Required:    true,
 							Attributes: map[string]schema.Attribute{
-								"source": schema.StringAttribute{
-									Description: "The source of the transformer that will be used",
-									Required:    true,
-								},
 								"config": transformerSchema,
 							},
 						},
