@@ -65,8 +65,8 @@ jobs:
       matrix:
         # list whatever Terraform versions here you would like to support
         terraform:
+          - "1.8.*"
           - "1.9.*"
-          - "1.10.*"
     steps:
       - uses: actions/checkout@v4
       - name: Set up Go
