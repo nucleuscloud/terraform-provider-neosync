@@ -262,7 +262,6 @@ Required:
 Required:
 
 - `config` (Attributes) This config object consists of the matching configuration defined with the source specified. (see [below for nested schema](#nestedatt--mappings--transformer--config))
-- `source` (String) The source of the transformer that will be used
 
 <a id="nestedatt--mappings--transformer--config"></a>
 ### Nested Schema for `mappings.transformer.config`
