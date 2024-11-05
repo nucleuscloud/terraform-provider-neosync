@@ -1,4 +1,13 @@
-# Postgres connection
+# Postgres Connection with URL
+resource "neosync_connection" "pg_url" {
+  name = "local-pg"
+
+  postgres = {
+    url = "postgres://postgres:postgres@localhost:5432?sslmode=disable"
+  }
+}
+
+# Postgres connection via separate parts
 resource "neosync_connection" "local_pg" {
   name = "local-pg"
 
