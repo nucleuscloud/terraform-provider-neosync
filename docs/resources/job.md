@@ -217,11 +217,29 @@ Optional:
 Required:
 
 - `connection_id` (String) The unique identifier of the connection that is to be used as the source
-- `halt_on_new_column_addition` (Boolean) Whether or not to halt the job if it detects a new column that has been added in the source that has not been defined in the mappings schema
 
 Optional:
 
+- `halt_on_new_column_addition` (Boolean) (Deprecated) Whether or not to halt the job if it detects a new column that has been added in the source that has not been defined in the mappings schema
+- `new_column_addition_strategy` (Attributes) Strategy for handling new column additions (see [below for nested schema](#nestedatt--source--postgres--new_column_addition_strategy))
 - `schemas` (Attributes List) A list of schemas and table specific options (see [below for nested schema](#nestedatt--source--postgres--schemas))
+
+<a id="nestedatt--source--postgres--new_column_addition_strategy"></a>
+### Nested Schema for `source.postgres.new_column_addition_strategy`
+
+Optional:
+
+- `auto_map` (Attributes) Automatically handle unmapped columns using DB defaults or generators (see [below for nested schema](#nestedatt--source--postgres--new_column_addition_strategy--auto_map))
+- `halt_job` (Attributes) Halt job if a new column is detected (see [below for nested schema](#nestedatt--source--postgres--new_column_addition_strategy--halt_job))
+
+<a id="nestedatt--source--postgres--new_column_addition_strategy--auto_map"></a>
+### Nested Schema for `source.postgres.new_column_addition_strategy.auto_map`
+
+
+<a id="nestedatt--source--postgres--new_column_addition_strategy--halt_job"></a>
+### Nested Schema for `source.postgres.new_column_addition_strategy.halt_job`
+
+
 
 <a id="nestedatt--source--postgres--schemas"></a>
 ### Nested Schema for `source.postgres.schemas`
