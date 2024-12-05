@@ -1,8 +1,6 @@
 module github.com/nucleuscloud/terraform-provider-neosync
 
-go 1.22.2
-
-toolchain go1.22.3
+go 1.23
 
 require (
 	connectrpc.com/connect v1.17.0
