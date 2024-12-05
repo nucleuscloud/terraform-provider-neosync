@@ -30,7 +30,7 @@ type JobHookDataSourceModel struct {
 }
 
 func (d *JobHookDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_jobhook"
+	resp.TypeName = req.ProviderTypeName + "_job_hook"
 }
 
 func (d *JobHookDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {

@@ -27,7 +27,7 @@ type JobHookResource struct {
 }
 
 func (r *JobHookResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_jobhook"
+	resp.TypeName = req.ProviderTypeName + "_job_hook"
 }
 
 func (r *JobHookResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {

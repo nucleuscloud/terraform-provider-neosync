@@ -100,6 +100,7 @@ func (j *JobHookResourceModel) FromDto(dto *mgmtv1alpha1.JobHook) error {
 	}
 
 	j.Id = types.StringValue(dto.GetId())
+	j.JobId = types.StringValue(dto.GetJobId())
 	j.Name = types.StringValue(dto.GetName())
 	j.Description = types.StringValue(dto.GetDescription())
 	j.Enabled = types.BoolValue(dto.GetEnabled())
