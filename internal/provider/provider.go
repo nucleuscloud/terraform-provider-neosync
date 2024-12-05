@@ -177,6 +177,7 @@ func (p *NeosyncProvider) DataSources(ctx context.Context) []func() datasource.D
 		NewJobDataSource,
 		NewUserDefinedTransformerDataSource,
 		NewSystemTransformerDataSource,
+		NewJobHookDataSource,
 	}
 }
 

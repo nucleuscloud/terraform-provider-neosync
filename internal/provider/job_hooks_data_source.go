@@ -15,6 +15,10 @@ import (
 
 var _ datasource.DataSource = (*JobHookDataSource)(nil)
 
+func NewJobHookDataSource() datasource.DataSource {
+	return &JobHookDataSource{}
+}
+
 type JobHookDataSource struct {
 	client mgmtv1alpha1connect.JobServiceClient
 }
