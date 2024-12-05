@@ -206,7 +206,7 @@ func fromModelJobSource(input *JobSource) (*mgmtv1alpha1.JobSource, error) {
 		}
 		output.Options.Config = &mgmtv1alpha1.JobSourceOptions_Postgres{
 			Postgres: &mgmtv1alpha1.PostgresSourceConnectionOptions{
-				HaltOnNewColumnAddition: input.Postgres.HaltOnNewColumnAddition.ValueBool(),
+				HaltOnNewColumnAddition: input.Postgres.HaltOnNewColumnAddition.ValueBoolPointer(),
 				ConnectionId:            input.Postgres.ConnectionId.ValueString(),
 				Schemas:                 schemas,
 			},
@@ -309,7 +309,7 @@ func fromJobDto(dto *mgmtv1alpha1.Job) (*JobResourceModel, error) {
 	switch source := dto.Source.Options.Config.(type) {
 	case *mgmtv1alpha1.JobSourceOptions_Postgres:
 		model.JobSource.Postgres = &JobSourcePostgresOptions{
-			HaltOnNewColumnAddition: types.BoolValue(source.Postgres.HaltOnNewColumnAddition),
+			HaltOnNewColumnAddition: types.BoolPointerValue(source.Postgres.HaltOnNewColumnAddition),
 			ConnectionId:            types.StringValue(source.Postgres.ConnectionId),
 		}
 		schemaOpts := []*JobSourcePostgresSourceSchemaOption{}
