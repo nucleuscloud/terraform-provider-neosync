@@ -168,6 +168,7 @@ func (p *NeosyncProvider) Resources(ctx context.Context) []func() resource.Resou
 		NewConnectionResource,
 		NewJobResource,
 		NewUserDefinedTransformerResource,
+		NewJobHookResource,
 	}
 }
 
