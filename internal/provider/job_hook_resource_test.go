@@ -233,7 +233,7 @@ resource "neosync_job_hook" "hook1" {
 		}
 	}
 }`, name)
-
+	var hookId string
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -246,6 +246,8 @@ resource "neosync_job_hook" "hook1" {
 					resource.TestCheckResourceAttr("neosync_job_hook.hook1", "enabled", "true"),
 					resource.TestCheckResourceAttr("neosync_job_hook.hook1", "priority", "1"),
 					resource.TestCheckResourceAttr("neosync_job_hook.hook1", "config.sql.query", "SELECT 1;"),
+					resource.TestCheckResourceAttrSet("neosync_job_hook.hook1", "id"),
+					GetAttributeFromState("neosync_job_hook.hook1", "id", func(attribute string) { hookId = attribute }),
 				),
 			},
 			{
@@ -256,6 +258,8 @@ resource "neosync_job_hook" "hook1" {
 					resource.TestCheckResourceAttr("neosync_job_hook.hook1", "enabled", "false"),
 					resource.TestCheckResourceAttr("neosync_job_hook.hook1", "priority", "2"),
 					resource.TestCheckResourceAttr("neosync_job_hook.hook1", "config.sql.query", "SELECT 2;"),
+					resource.TestCheckResourceAttrSet("neosync_job_hook.hook1", "id"),
+					GetTestAttributeFromStateFn("neosync_job_hook.hook1", "id", func() string { return hookId }),
 				),
 			},
 		},

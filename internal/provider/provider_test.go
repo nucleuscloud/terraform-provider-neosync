@@ -37,27 +37,35 @@ func mustHaveEnv(t *testing.T, name string) {
 
 // Retrieves the account_id from state during a terraform check. Mutates the input accountId.
 func GetAccountIdFromState(resource string, onAccountId func(accountId string)) func(s *terraform.State) error {
+	return GetAttributeFromState(resource, "account_id", onAccountId)
+}
+
+func GetAttributeFromState(resource string, attribute string, onAttribute func(attribute string)) func(s *terraform.State) error {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[resource]
 		if !ok {
 			return fmt.Errorf("Not found: %s", resource)
 		}
-		accId := rs.Primary.Attributes["account_id"]
-		onAccountId(accId)
+		attr := rs.Primary.Attributes[attribute]
+		onAttribute(attr)
 		return nil
 	}
 }
 
-// Ensures that the value did not change between runs
+// Ensures that the value did not change between runs.
 func GetTestAccountIdFromStateFn(resource string, getAccountId func() string) func(s *terraform.State) error {
+	return GetTestAttributeFromStateFn(resource, "account_id", getAccountId)
+}
+
+func GetTestAttributeFromStateFn(resource string, attributeKey string, getAttribute func() string) func(s *terraform.State) error {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[resource]
 		if !ok {
 			return fmt.Errorf("Not found: %s", resource)
 		}
-		accountId := getAccountId()
-		if rs.Primary.Attributes["account_id"] != accountId {
-			return fmt.Errorf("account_id changed unexpectedly. Was %s, now %s", accountId, rs.Primary.Attributes["account_id"])
+		attribute := getAttribute()
+		if rs.Primary.Attributes[attributeKey] != attribute {
+			return fmt.Errorf("%s changed unexpectedly. Was %s, now %s", attributeKey, attribute, rs.Primary.Attributes[attributeKey])
 		}
 		return nil
 	}
