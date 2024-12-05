@@ -48,6 +48,7 @@ func GetAccountIdFromState(resource string, onAccountId func(accountId string)) 
 	}
 }
 
+// Ensures that the value did not change between runs
 func GetTestAccountIdFromStateFn(resource string, getAccountId func() string) func(s *terraform.State) error {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[resource]
