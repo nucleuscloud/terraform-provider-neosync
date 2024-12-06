@@ -204,12 +204,36 @@ func fromModelJobSource(input *JobSource) (*mgmtv1alpha1.JobSource, error) {
 				Tables: tables,
 			})
 		}
+		pgOpts := &mgmtv1alpha1.PostgresSourceConnectionOptions{
+			ConnectionId: input.Postgres.ConnectionId.ValueString(),
+			Schemas:      schemas,
+		}
+		if input.Postgres.NewColumnAdditionStrategy != nil {
+			strategy := &mgmtv1alpha1.PostgresSourceConnectionOptions_NewColumnAdditionStrategy{}
+
+			if input.Postgres.NewColumnAdditionStrategy.HaltJob != nil {
+				strategy.Strategy = &mgmtv1alpha1.PostgresSourceConnectionOptions_NewColumnAdditionStrategy_HaltJob_{
+					HaltJob: &mgmtv1alpha1.PostgresSourceConnectionOptions_NewColumnAdditionStrategy_HaltJob{},
+				}
+			} else if input.Postgres.NewColumnAdditionStrategy.AutoMap != nil {
+				strategy.Strategy = &mgmtv1alpha1.PostgresSourceConnectionOptions_NewColumnAdditionStrategy_AutoMap_{
+					AutoMap: &mgmtv1alpha1.PostgresSourceConnectionOptions_NewColumnAdditionStrategy_AutoMap{},
+				}
+			}
+			pgOpts.NewColumnAdditionStrategy = strategy
+		} else if !input.Postgres.HaltOnNewColumnAddition.IsNull() {
+			// Handle deprecated field
+			if input.Postgres.HaltOnNewColumnAddition.ValueBool() {
+				pgOpts.NewColumnAdditionStrategy = &mgmtv1alpha1.PostgresSourceConnectionOptions_NewColumnAdditionStrategy{
+					Strategy: &mgmtv1alpha1.PostgresSourceConnectionOptions_NewColumnAdditionStrategy_HaltJob_{
+						HaltJob: &mgmtv1alpha1.PostgresSourceConnectionOptions_NewColumnAdditionStrategy_HaltJob{},
+					},
+				}
+			}
+			// If false, leave strategy nil
+		}
 		output.Options.Config = &mgmtv1alpha1.JobSourceOptions_Postgres{
-			Postgres: &mgmtv1alpha1.PostgresSourceConnectionOptions{
-				HaltOnNewColumnAddition: input.Postgres.HaltOnNewColumnAddition.ValueBool(),
-				ConnectionId:            input.Postgres.ConnectionId.ValueString(),
-				Schemas:                 schemas,
-			},
+			Postgres: pgOpts,
 		}
 	} else if input.Mysql != nil {
 		schemas := []*mgmtv1alpha1.MysqlSourceSchemaOption{}
@@ -309,8 +333,23 @@ func fromJobDto(dto *mgmtv1alpha1.Job) (*JobResourceModel, error) {
 	switch source := dto.Source.Options.Config.(type) {
 	case *mgmtv1alpha1.JobSourceOptions_Postgres:
 		model.JobSource.Postgres = &JobSourcePostgresOptions{
-			HaltOnNewColumnAddition: types.BoolValue(source.Postgres.HaltOnNewColumnAddition),
-			ConnectionId:            types.StringValue(source.Postgres.ConnectionId),
+			ConnectionId: types.StringValue(source.Postgres.ConnectionId),
+		}
+		if source.Postgres.NewColumnAdditionStrategy != nil {
+			strategy := &PostgresNewColumnAdditionStrategy{}
+
+			switch source.Postgres.NewColumnAdditionStrategy.Strategy.(type) {
+			case *mgmtv1alpha1.PostgresSourceConnectionOptions_NewColumnAdditionStrategy_HaltJob_:
+				strategy.HaltJob = &PostgresNewColumnAdditionStrategyHaltJob{}
+				model.JobSource.Postgres.HaltOnNewColumnAddition = types.BoolValue(true)
+			case *mgmtv1alpha1.PostgresSourceConnectionOptions_NewColumnAdditionStrategy_AutoMap_:
+				strategy.AutoMap = &PostgresNewColumnAdditionStrategyAutoMap{}
+				model.JobSource.Postgres.HaltOnNewColumnAddition = types.BoolValue(false)
+			}
+			model.JobSource.Postgres.NewColumnAdditionStrategy = strategy
+		} else {
+			// No strategy means halt_on_new_column_addition was false
+			model.JobSource.Postgres.HaltOnNewColumnAddition = types.BoolValue(false)
 		}
 		schemaOpts := []*JobSourcePostgresSourceSchemaOption{}
 		for _, dtoopt := range source.Postgres.Schemas {
@@ -842,10 +881,20 @@ type JobSource struct {
 	AwsS3    *JobSourceAwsS3Options    `tfsdk:"aws_s3"`
 }
 type JobSourcePostgresOptions struct {
-	HaltOnNewColumnAddition types.Bool                             `tfsdk:"halt_on_new_column_addition"`
-	ConnectionId            types.String                           `tfsdk:"connection_id"`
-	SchemaOptions           []*JobSourcePostgresSourceSchemaOption `tfsdk:"schemas"`
+	HaltOnNewColumnAddition   types.Bool                             `tfsdk:"halt_on_new_column_addition"`
+	NewColumnAdditionStrategy *PostgresNewColumnAdditionStrategy     `tfsdk:"new_column_addition_strategy"`
+	ConnectionId              types.String                           `tfsdk:"connection_id"`
+	SchemaOptions             []*JobSourcePostgresSourceSchemaOption `tfsdk:"schemas"`
 }
+
+type PostgresNewColumnAdditionStrategy struct {
+	HaltJob *PostgresNewColumnAdditionStrategyHaltJob `tfsdk:"halt_job"`
+	AutoMap *PostgresNewColumnAdditionStrategyAutoMap `tfsdk:"auto_map"`
+}
+
+type PostgresNewColumnAdditionStrategyHaltJob struct{}
+type PostgresNewColumnAdditionStrategyAutoMap struct{}
+
 type JobSourcePostgresSourceSchemaOption struct {
 	Schema types.String                          `tfsdk:"schema"`
 	Tables []*JobSourcePostgresSourceTableOption `tfsdk:"tables"`
@@ -1081,8 +1130,24 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 						Optional:    true,
 						Attributes: map[string]schema.Attribute{
 							"halt_on_new_column_addition": schema.BoolAttribute{
-								Description: "Whether or not to halt the job if it detects a new column that has been added in the source that has not been defined in the mappings schema",
-								Required:    true,
+								Description: "(Deprecated) Whether or not to halt the job if it detects a new column that has been added in the source that has not been defined in the mappings schema",
+								Optional:    true,
+							},
+							"new_column_addition_strategy": schema.SingleNestedAttribute{
+								Description: "Strategy for handling new column additions",
+								Optional:    true,
+								Attributes: map[string]schema.Attribute{
+									"halt_job": schema.SingleNestedAttribute{
+										Description: "Halt job if a new column is detected",
+										Optional:    true,
+										Attributes:  map[string]schema.Attribute{},
+									},
+									"auto_map": schema.SingleNestedAttribute{
+										Description: "Automatically handle unmapped columns using DB defaults or generators",
+										Optional:    true,
+										Attributes:  map[string]schema.Attribute{},
+									},
+								},
 							},
 							"connection_id": schema.StringAttribute{
 								Description: "The unique identifier of the connection that is to be used as the source",
