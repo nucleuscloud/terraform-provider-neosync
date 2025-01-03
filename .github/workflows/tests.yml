@@ -41,6 +41,12 @@ jobs:
 
   generate:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # list whatever Terraform versions here you would like to support
+        terraform:
+          - "1.9.*"
     steps:
       - uses: actions/checkout@v4
       - name: Set up Go
@@ -48,6 +54,10 @@ jobs:
         with:
           go-version-file: go.mod
           cache-dependency-path: go.sum
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ matrix.terraform }}
+          terraform_wrapper: false
       - run: go generate ./...
       - name: git diff
         run: |
