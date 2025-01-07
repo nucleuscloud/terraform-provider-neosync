@@ -1,6 +1,9 @@
 module github.com/nucleuscloud/terraform-provider-neosync
 
-go 1.23
+go 1.23.0
+
+toolchain go1.23.4
+
 require (
 	connectrpc.com/connect v1.17.0
 	github.com/hashicorp/terraform-plugin-docs v0.20.1
@@ -66,7 +69,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/posener/complete v1.2.3 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
-	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/spf13/cast v1.6.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
