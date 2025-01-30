@@ -53,9 +53,21 @@ resource "neosync_job" "job1" {
 			table = "users"
 			column = "id"
 			transformer = {
-				source = "passthrough"
 				config = {
 					passthrough = {}
+				}
+			}
+		},
+		{
+			schema = "public"
+			table = "users"
+			column = "id2"
+			transformer = {
+				config = {
+					transform_email = {
+						preserve_domain = false
+						preserve_length = false
+					}
 				}
 			}
 		}
