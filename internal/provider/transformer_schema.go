@@ -41,6 +41,7 @@ var (
 					"valid_luhn": schema.BoolAttribute{
 						Description: "",
 						Optional:    true,
+						Computed:    true,
 						Default:     booldefault.StaticBool(true),
 					},
 				},
@@ -56,11 +57,13 @@ var (
 					"min": schema.Int64Attribute{
 						Description: "",
 						Optional:    true,
+						Computed:    true,
 						Default:     int64default.StaticInt64(9),
 					},
 					"max": schema.Int64Attribute{
 						Description: "",
 						Optional:    true,
+						Computed:    true,
 						Default:     int64default.StaticInt64(15),
 					},
 				},
@@ -80,16 +83,19 @@ var (
 					"min": schema.Float64Attribute{
 						Description: "",
 						Optional:    true,
+						Computed:    true,
 						Default:     float64default.StaticFloat64(1.00),
 					},
 					"max": schema.Float64Attribute{
 						Description: "",
 						Optional:    true,
+						Computed:    true,
 						Default:     float64default.StaticFloat64(100.00),
 					},
 					"precision": schema.Int64Attribute{
 						Description: "",
 						Optional:    true,
+						Computed:    true,
 						Default:     int64default.StaticInt64(6),
 					},
 				},
@@ -127,11 +133,13 @@ var (
 					"min": schema.Int64Attribute{
 						Description: "",
 						Optional:    true,
+						Computed:    true,
 						Default:     int64default.StaticInt64(1),
 					},
 					"max": schema.Int64Attribute{
 						Description: "",
 						Optional:    true,
+						Computed:    true,
 						Default:     int64default.StaticInt64(40),
 					},
 				},
@@ -163,11 +171,13 @@ var (
 					"min": schema.Int64Attribute{
 						Description: "",
 						Optional:    true,
+						Computed:    true,
 						Default:     int64default.StaticInt64(9),
 					},
 					"max": schema.Int64Attribute{
 						Description: "",
 						Optional:    true,
+						Computed:    true,
 						Default:     int64default.StaticInt64(14),
 					},
 				},
@@ -179,11 +189,13 @@ var (
 					"min": schema.Int64Attribute{
 						Description: "",
 						Optional:    true,
+						Computed:    true,
 						Default:     int64default.StaticInt64(2),
 					},
 					"max": schema.Int64Attribute{
 						Description: "",
 						Optional:    true,
+						Computed:    true,
 						Default:     int64default.StaticInt64(7),
 					},
 				},
@@ -207,6 +219,7 @@ var (
 					"include_hyphens": schema.BoolAttribute{
 						Description: "",
 						Optional:    true,
+						Computed:    true,
 						Default:     booldefault.StaticBool(true),
 					},
 				},
@@ -222,6 +235,7 @@ var (
 					"preserve_length": schema.BoolAttribute{
 						Description: "",
 						Optional:    true,
+						Computed:    true,
 					},
 				},
 			},
@@ -232,6 +246,7 @@ var (
 					"preserve_length": schema.BoolAttribute{
 						Description: "",
 						Optional:    true,
+						Computed:    true,
 					},
 				},
 			},
@@ -242,11 +257,13 @@ var (
 					"randomization_range_min": schema.Float64Attribute{
 						Description: "",
 						Optional:    true,
+						Computed:    true,
 						Default:     float64default.StaticFloat64(20.00),
 					},
 					"randomization_range_max": schema.Float64Attribute{
 						Description: "",
 						Optional:    true,
+						Computed:    true,
 						Default:     float64default.StaticFloat64(50.00),
 					},
 				},
@@ -258,6 +275,7 @@ var (
 					"preserve_length": schema.BoolAttribute{
 						Description: "",
 						Optional:    true,
+						Computed:    true,
 					},
 				},
 			},
@@ -268,6 +286,7 @@ var (
 					"preserve_length": schema.BoolAttribute{
 						Description: "",
 						Optional:    true,
+						Computed:    true,
 					},
 				},
 			},
@@ -278,11 +297,13 @@ var (
 					"randomization_range_min": schema.Int64Attribute{
 						Description: "",
 						Optional:    true,
+						Computed:    true,
 						Default:     int64default.StaticInt64(20),
 					},
 					"randomization_range_max": schema.Int64Attribute{
 						Description: "",
 						Optional:    true,
+						Computed:    true,
 						Default:     int64default.StaticInt64(50),
 					},
 				},
