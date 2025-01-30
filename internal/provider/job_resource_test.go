@@ -66,7 +66,7 @@ resource "neosync_job" "job1" {
 				config = {
 					transform_email = {
 						preserve_domain = false
-						preserve_length = false
+						preserve_length = true
 					}
 				}
 			}

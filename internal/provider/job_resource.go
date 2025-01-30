@@ -724,7 +724,10 @@ func toTransformerConfigFromDto(dto *mgmtv1alpha1.TransformerConfig) (*Transform
 	case *mgmtv1alpha1.TransformerConfig_GenerateEmailConfig:
 		tconfig.GenerateEmail = &TransformerEmpty{}
 	case *mgmtv1alpha1.TransformerConfig_TransformEmailConfig:
-		tconfig.TransformEmail = &TransformEmail{}
+		tconfig.TransformEmail = &TransformEmail{
+			PreserveDomain: types.BoolPointerValue(config.TransformEmailConfig.PreserveDomain),
+			PreserveLength: types.BoolPointerValue(config.TransformEmailConfig.PreserveLength),
+		}
 	case *mgmtv1alpha1.TransformerConfig_GenerateBoolConfig:
 		tconfig.GenerateBool = &TransformerEmpty{}
 	case *mgmtv1alpha1.TransformerConfig_GenerateCardNumberConfig:
