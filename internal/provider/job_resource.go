@@ -705,6 +705,12 @@ func fromModelTransformerConfig(model *TransformerConfig) (*mgmtv1alpha1.Transfo
 		dto.Config = &mgmtv1alpha1.TransformerConfig_TransformCharacterScrambleConfig{
 			TransformCharacterScrambleConfig: &mgmtv1alpha1.TransformCharacterScramble{},
 		}
+	} else if model.GenerateJavascript != nil {
+		dto.Config = &mgmtv1alpha1.TransformerConfig_GenerateJavascriptConfig{
+			GenerateJavascriptConfig: &mgmtv1alpha1.GenerateJavascript{
+				Code: model.GenerateJavascript.Code.ValueString(),
+			},
+		}
 	} else {
 		return nil, fmt.Errorf("transformer config is not currently supported by this provider: %w", errors.ErrUnsupported)
 	}
@@ -718,7 +724,10 @@ func toTransformerConfigFromDto(dto *mgmtv1alpha1.TransformerConfig) (*Transform
 	case *mgmtv1alpha1.TransformerConfig_GenerateEmailConfig:
 		tconfig.GenerateEmail = &TransformerEmpty{}
 	case *mgmtv1alpha1.TransformerConfig_TransformEmailConfig:
-		tconfig.TransformEmail = &TransformEmail{}
+		tconfig.TransformEmail = &TransformEmail{
+			PreserveDomain: types.BoolPointerValue(config.TransformEmailConfig.PreserveDomain),
+			PreserveLength: types.BoolPointerValue(config.TransformEmailConfig.PreserveLength),
+		}
 	case *mgmtv1alpha1.TransformerConfig_GenerateBoolConfig:
 		tconfig.GenerateBool = &TransformerEmpty{}
 	case *mgmtv1alpha1.TransformerConfig_GenerateCardNumberConfig:
@@ -847,6 +856,10 @@ func toTransformerConfigFromDto(dto *mgmtv1alpha1.TransformerConfig) (*Transform
 		}
 	case *mgmtv1alpha1.TransformerConfig_TransformCharacterScrambleConfig:
 		tconfig.TransformCharacterScramble = &TransformerEmpty{}
+	case *mgmtv1alpha1.TransformerConfig_GenerateJavascriptConfig:
+		tconfig.GenerateJavascript = &GenerateJavascript{
+			Code: types.StringValue(config.GenerateJavascriptConfig.Code),
+		}
 	default:
 		return nil, fmt.Errorf("this job mapping transformer is not currently supported by this provider: %w", errors.ErrUnsupported)
 	}
@@ -1009,6 +1022,7 @@ type TransformerConfig struct {
 	UserDefinedTransformer     *UserDefinedTransformer    `tfsdk:"user_defined_transformer"`
 	GenerateDefault            *TransformerEmpty          `tfsdk:"generate_default"`
 	TransformJavascript        *TransformJavascript       `tfsdk:"transform_javascript"`
+	GenerateJavascript         *GenerateJavascript        `tfsdk:"generate_javascript"`
 	GenerateCategorical        *GenerateCategorical       `tfsdk:"generate_categorical"`
 	TransformCharacterScramble *TransformerEmpty          `tfsdk:"transform_character_scramble"`
 }
@@ -1079,6 +1093,9 @@ type TransformString struct {
 	PreserveLength types.Bool `tfsdk:"preserve_length"`
 }
 type TransformJavascript struct {
+	Code types.String `tfsdk:"code"`
+}
+type GenerateJavascript struct {
 	Code types.String `tfsdk:"code"`
 }
 type UserDefinedTransformer struct {

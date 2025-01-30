@@ -1,6 +1,11 @@
 package provider
 
-import "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+import (
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/float64default"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
+)
 
 var (
 	transformerSchema = schema.SingleNestedAttribute{
@@ -17,11 +22,11 @@ var (
 				Attributes: map[string]schema.Attribute{
 					"preserve_domain": schema.BoolAttribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
 					},
 					"preserve_length": schema.BoolAttribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
 					},
 				},
 			},
@@ -35,7 +40,9 @@ var (
 				Attributes: map[string]schema.Attribute{
 					"valid_luhn": schema.BoolAttribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
+						Computed:    true,
+						Default:     booldefault.StaticBool(true),
 					},
 				},
 			},
@@ -49,11 +56,15 @@ var (
 				Attributes: map[string]schema.Attribute{
 					"min": schema.Int64Attribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
+						Computed:    true,
+						Default:     int64default.StaticInt64(9),
 					},
 					"max": schema.Int64Attribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
+						Computed:    true,
+						Default:     int64default.StaticInt64(15),
 					},
 				},
 			},
@@ -71,15 +82,21 @@ var (
 					},
 					"min": schema.Float64Attribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
+						Computed:    true,
+						Default:     float64default.StaticFloat64(1.00),
 					},
 					"max": schema.Float64Attribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
+						Computed:    true,
+						Default:     float64default.StaticFloat64(100.00),
 					},
 					"precision": schema.Int64Attribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
+						Computed:    true,
+						Default:     int64default.StaticInt64(6),
 					},
 				},
 			},
@@ -97,7 +114,7 @@ var (
 				Attributes: map[string]schema.Attribute{
 					"abbreviate": schema.BoolAttribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
 					},
 				},
 			},
@@ -111,15 +128,19 @@ var (
 				Attributes: map[string]schema.Attribute{
 					"randomize_sign": schema.BoolAttribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
 					},
 					"min": schema.Int64Attribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
+						Computed:    true,
+						Default:     int64default.StaticInt64(1),
 					},
 					"max": schema.Int64Attribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
+						Computed:    true,
+						Default:     int64default.StaticInt64(40),
 					},
 				},
 			},
@@ -149,11 +170,15 @@ var (
 				Attributes: map[string]schema.Attribute{
 					"min": schema.Int64Attribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
+						Computed:    true,
+						Default:     int64default.StaticInt64(9),
 					},
 					"max": schema.Int64Attribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
+						Computed:    true,
+						Default:     int64default.StaticInt64(14),
 					},
 				},
 			},
@@ -163,11 +188,15 @@ var (
 				Attributes: map[string]schema.Attribute{
 					"min": schema.Int64Attribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
+						Computed:    true,
+						Default:     int64default.StaticInt64(2),
 					},
 					"max": schema.Int64Attribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
+						Computed:    true,
+						Default:     int64default.StaticInt64(7),
 					},
 				},
 			},
@@ -189,7 +218,9 @@ var (
 				Attributes: map[string]schema.Attribute{
 					"include_hyphens": schema.BoolAttribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
+						Computed:    true,
+						Default:     booldefault.StaticBool(true),
 					},
 				},
 			},
@@ -203,7 +234,8 @@ var (
 				Attributes: map[string]schema.Attribute{
 					"preserve_length": schema.BoolAttribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
+						Computed:    true,
 					},
 				},
 			},
@@ -213,7 +245,8 @@ var (
 				Attributes: map[string]schema.Attribute{
 					"preserve_length": schema.BoolAttribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
+						Computed:    true,
 					},
 				},
 			},
@@ -223,11 +256,15 @@ var (
 				Attributes: map[string]schema.Attribute{
 					"randomization_range_min": schema.Float64Attribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
+						Computed:    true,
+						Default:     float64default.StaticFloat64(20.00),
 					},
 					"randomization_range_max": schema.Float64Attribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
+						Computed:    true,
+						Default:     float64default.StaticFloat64(50.00),
 					},
 				},
 			},
@@ -237,7 +274,8 @@ var (
 				Attributes: map[string]schema.Attribute{
 					"preserve_length": schema.BoolAttribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
+						Computed:    true,
 					},
 				},
 			},
@@ -247,7 +285,8 @@ var (
 				Attributes: map[string]schema.Attribute{
 					"preserve_length": schema.BoolAttribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
+						Computed:    true,
 					},
 				},
 			},
@@ -257,11 +296,15 @@ var (
 				Attributes: map[string]schema.Attribute{
 					"randomization_range_min": schema.Int64Attribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
+						Computed:    true,
+						Default:     int64default.StaticInt64(20),
 					},
 					"randomization_range_max": schema.Int64Attribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
+						Computed:    true,
+						Default:     int64default.StaticInt64(50),
 					},
 				},
 			},
@@ -271,7 +314,7 @@ var (
 				Attributes: map[string]schema.Attribute{
 					"preserve_length": schema.BoolAttribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
 					},
 				},
 			},
@@ -281,7 +324,7 @@ var (
 				Attributes: map[string]schema.Attribute{
 					"preserve_length": schema.BoolAttribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
 					},
 				},
 			},
@@ -291,7 +334,7 @@ var (
 				Attributes: map[string]schema.Attribute{
 					"preserve_length": schema.BoolAttribute{
 						Description: "",
-						Required:    true,
+						Optional:    true,
 					},
 				},
 			},
@@ -318,6 +361,16 @@ var (
 				Optional:    true,
 			},
 			"transform_javascript": schema.SingleNestedAttribute{
+				Description: "",
+				Optional:    true,
+				Attributes: map[string]schema.Attribute{
+					"code": schema.StringAttribute{
+						Description: "",
+						Required:    true,
+					},
+				},
+			},
+			"generate_javascript": schema.SingleNestedAttribute{
 				Description: "",
 				Optional:    true,
 				Attributes: map[string]schema.Attribute{

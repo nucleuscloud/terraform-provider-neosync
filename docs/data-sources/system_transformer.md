@@ -56,6 +56,7 @@ Optional:
 - `generate_gender` (Attributes) (see [below for nested schema](#nestedatt--config--generate_gender))
 - `generate_int64` (Attributes) (see [below for nested schema](#nestedatt--config--generate_int64))
 - `generate_int64_phone_number` (Attributes) (see [below for nested schema](#nestedatt--config--generate_int64_phone_number))
+- `generate_javascript` (Attributes) (see [below for nested schema](#nestedatt--config--generate_javascript))
 - `generate_lastname` (Attributes) (see [below for nested schema](#nestedatt--config--generate_lastname))
 - `generate_sha256` (Attributes) (see [below for nested schema](#nestedatt--config--generate_sha256))
 - `generate_ssn` (Attributes) (see [below for nested schema](#nestedatt--config--generate_ssn))
@@ -91,7 +92,7 @@ Optional:
 <a id="nestedatt--config--generate_card_number"></a>
 ### Nested Schema for `config.generate_card_number`
 
-Required:
+Optional:
 
 - `valid_luhn` (Boolean)
 
@@ -115,7 +116,7 @@ Required:
 <a id="nestedatt--config--generate_e164_phone_number"></a>
 ### Nested Schema for `config.generate_e164_phone_number`
 
-Required:
+Optional:
 
 - `max` (Number)
 - `min` (Number)
@@ -134,10 +135,13 @@ Required:
 
 Required:
 
+- `randomize_sign` (Boolean)
+
+Optional:
+
 - `max` (Number)
 - `min` (Number)
 - `precision` (Number)
-- `randomize_sign` (Boolean)
 
 
 <a id="nestedatt--config--generate_full_address"></a>
@@ -151,7 +155,7 @@ Required:
 <a id="nestedatt--config--generate_gender"></a>
 ### Nested Schema for `config.generate_gender`
 
-Required:
+Optional:
 
 - `abbreviate` (Boolean)
 
@@ -159,7 +163,7 @@ Required:
 <a id="nestedatt--config--generate_int64"></a>
 ### Nested Schema for `config.generate_int64`
 
-Required:
+Optional:
 
 - `max` (Number)
 - `min` (Number)
@@ -168,6 +172,14 @@ Required:
 
 <a id="nestedatt--config--generate_int64_phone_number"></a>
 ### Nested Schema for `config.generate_int64_phone_number`
+
+
+<a id="nestedatt--config--generate_javascript"></a>
+### Nested Schema for `config.generate_javascript`
+
+Required:
+
+- `code` (String)
 
 
 <a id="nestedatt--config--generate_lastname"></a>
@@ -193,7 +205,7 @@ Required:
 <a id="nestedatt--config--generate_string"></a>
 ### Nested Schema for `config.generate_string`
 
-Required:
+Optional:
 
 - `max` (Number)
 - `min` (Number)
@@ -202,7 +214,7 @@ Required:
 <a id="nestedatt--config--generate_string_phone_number"></a>
 ### Nested Schema for `config.generate_string_phone_number`
 
-Required:
+Optional:
 
 - `max` (Number)
 - `min` (Number)
@@ -223,7 +235,7 @@ Required:
 <a id="nestedatt--config--generate_uuid"></a>
 ### Nested Schema for `config.generate_uuid`
 
-Required:
+Optional:
 
 - `include_hyphens` (Boolean)
 
@@ -247,7 +259,7 @@ Required:
 <a id="nestedatt--config--transform_e164_phone_number"></a>
 ### Nested Schema for `config.transform_e164_phone_number`
 
-Required:
+Optional:
 
 - `preserve_length` (Boolean)
 
@@ -255,7 +267,7 @@ Required:
 <a id="nestedatt--config--transform_email"></a>
 ### Nested Schema for `config.transform_email`
 
-Required:
+Optional:
 
 - `preserve_domain` (Boolean)
 - `preserve_length` (Boolean)
@@ -264,7 +276,7 @@ Required:
 <a id="nestedatt--config--transform_firstname"></a>
 ### Nested Schema for `config.transform_firstname`
 
-Required:
+Optional:
 
 - `preserve_length` (Boolean)
 
@@ -272,7 +284,7 @@ Required:
 <a id="nestedatt--config--transform_float64"></a>
 ### Nested Schema for `config.transform_float64`
 
-Required:
+Optional:
 
 - `randomization_range_max` (Number)
 - `randomization_range_min` (Number)
@@ -281,7 +293,7 @@ Required:
 <a id="nestedatt--config--transform_fullname"></a>
 ### Nested Schema for `config.transform_fullname`
 
-Required:
+Optional:
 
 - `preserve_length` (Boolean)
 
@@ -289,7 +301,7 @@ Required:
 <a id="nestedatt--config--transform_int64"></a>
 ### Nested Schema for `config.transform_int64`
 
-Required:
+Optional:
 
 - `randomization_range_max` (Number)
 - `randomization_range_min` (Number)
@@ -298,7 +310,7 @@ Required:
 <a id="nestedatt--config--transform_int64_phone_number"></a>
 ### Nested Schema for `config.transform_int64_phone_number`
 
-Required:
+Optional:
 
 - `preserve_length` (Boolean)
 
@@ -314,7 +326,7 @@ Required:
 <a id="nestedatt--config--transform_lastname"></a>
 ### Nested Schema for `config.transform_lastname`
 
-Required:
+Optional:
 
 - `preserve_length` (Boolean)
 
@@ -322,7 +334,7 @@ Required:
 <a id="nestedatt--config--transform_phone_number"></a>
 ### Nested Schema for `config.transform_phone_number`
 
-Required:
+Optional:
 
 - `preserve_length` (Boolean)
 
@@ -330,7 +342,7 @@ Required:
 <a id="nestedatt--config--transform_string"></a>
 ### Nested Schema for `config.transform_string`
 
-Required:
+Optional:
 
 - `preserve_length` (Boolean)
 

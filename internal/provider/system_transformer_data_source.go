@@ -115,7 +115,7 @@ func (d *SystemTransformerDataSource) Read(ctx context.Context, req datasource.R
 
 	data.Name = types.StringValue(transformer.Name)
 	data.Description = types.StringValue(transformer.Description)
-	data.Datatype = types.Int64Value(int64(transformer.DataType))
+	data.Datatype = types.Int64Value(int64(transformer.DataType)) //nolint staticcheck
 	data.Source = types.StringValue(transformerSourceToStateSource(transformer.Source))
 	data.Config = modelConfig
 	tflog.Trace(ctx, "read system transformer", map[string]any{"source": data.Source.ValueString()})
