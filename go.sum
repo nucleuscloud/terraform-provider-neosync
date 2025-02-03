@@ -168,8 +168,8 @@ github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RR
 github.com/mitchellh/reflectwalk v1.0.0/go.mod h1:mSTlrgnPZtwu0c4WaC2kGObEpuNDbx0jmZXqmk4esnw=
 github.com/mitchellh/reflectwalk v1.0.2 h1:G2LzWKi524PWgd3mLHV8Y5k7s6XUvT0Gef6zxSIeXaQ=
 github.com/mitchellh/reflectwalk v1.0.2/go.mod h1:mSTlrgnPZtwu0c4WaC2kGObEpuNDbx0jmZXqmk4esnw=
-github.com/nucleuscloud/neosync v0.5.13 h1:YWWNrcehw8Os8MGM/6Brk4wPd/tCV7SOxrohODlVndQ=
-github.com/nucleuscloud/neosync v0.5.13/go.mod h1:XBtHfi3uiP+PoIkPm0rc9zUFG+ODvEJOVfDid01g8/8=
+github.com/nucleuscloud/neosync v0.5.14 h1:yHDf60K/UFUWdHK12hDWkidFnfVNVCbmSYyr3fKQyKc=
+github.com/nucleuscloud/neosync v0.5.14/go.mod h1:XBtHfi3uiP+PoIkPm0rc9zUFG+ODvEJOVfDid01g8/8=
 github.com/oklog/run v1.0.0 h1:Ru7dDtJNOyC66gQ5dQmaCa0qIsAUFY3sFpK1Xk8igrw=
 github.com/oklog/run v1.0.0/go.mod h1:dlhp/R75TPv97u0XWUtDeV/lRKWPKSdTuV0TZvrmrQA=
 github.com/pjbgf/sha1cd v0.3.0 h1:4D5XXmUUBUl/xQ6IjCkEAbqXskkq/4O7LmGn0AqMDs4=
