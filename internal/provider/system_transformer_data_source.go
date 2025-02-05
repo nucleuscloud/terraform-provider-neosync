@@ -13,6 +13,7 @@ import (
 
 	mgmtv1alpha1 "github.com/nucleuscloud/neosync/backend/gen/go/protos/mgmt/v1alpha1"
 	"github.com/nucleuscloud/neosync/backend/gen/go/protos/mgmt/v1alpha1/mgmtv1alpha1connect"
+	transformer_model "github.com/nucleuscloud/terraform-provider-neosync/internal/models/transformers"
 )
 
 var _ datasource.DataSource = &SystemTransformerDataSource{}
@@ -26,11 +27,11 @@ type SystemTransformerDataSource struct {
 }
 
 type SystemTransformerDataSourceModel struct {
-	Name        types.String       `tfsdk:"name"`
-	Description types.String       `tfsdk:"description"`
-	Datatype    types.Int64        `tfsdk:"datatype"`
-	Source      types.String       `tfsdk:"source"`
-	Config      *TransformerConfig `tfsdk:"config"`
+	Name        types.String                         `tfsdk:"name"`
+	Description types.String                         `tfsdk:"description"`
+	Datatype    types.Int64                          `tfsdk:"datatype"`
+	Source      types.String                         `tfsdk:"source"`
+	Config      *transformer_model.TransformerConfig `tfsdk:"config"`
 }
 
 func (d *SystemTransformerDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -107,7 +108,8 @@ func (d *SystemTransformerDataSource) Read(ctx context.Context, req datasource.R
 	}
 
 	transformer := transResp.Msg.GetTransformer()
-	modelConfig, err := toTransformerConfigFromDto(transformer.Config)
+	modelConfig := &transformer_model.Transformer{}
+	err = modelConfig.FromDto(transformer.Config)
 	if err != nil {
 		resp.Diagnostics.AddError("unable to convert dto transformer config to model", err.Error())
 		return
@@ -117,7 +119,7 @@ func (d *SystemTransformerDataSource) Read(ctx context.Context, req datasource.R
 	data.Description = types.StringValue(transformer.Description)
 	data.Datatype = types.Int64Value(int64(transformer.DataType)) //nolint staticcheck
 	data.Source = types.StringValue(transformerSourceToStateSource(transformer.Source))
-	data.Config = modelConfig
+	data.Config = modelConfig.Config
 	tflog.Trace(ctx, "read system transformer", map[string]any{"source": data.Source.ValueString()})
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

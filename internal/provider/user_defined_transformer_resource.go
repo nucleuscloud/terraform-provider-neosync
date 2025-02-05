@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	mgmtv1alpha1 "github.com/nucleuscloud/neosync/backend/gen/go/protos/mgmt/v1alpha1"
 	"github.com/nucleuscloud/neosync/backend/gen/go/protos/mgmt/v1alpha1/mgmtv1alpha1connect"
+	transformer_model "github.com/nucleuscloud/terraform-provider-neosync/internal/models/transformers"
 )
 
 var _ resource.Resource = &UserDefinedTransformerResource{}
@@ -29,12 +30,12 @@ type UserDefinedTransformerResource struct {
 }
 
 type UserDefinedTransformerResourceModel struct {
-	Id          types.String       `tfsdk:"id"`
-	Name        types.String       `tfsdk:"name"`
-	Description types.String       `tfsdk:"description"`
-	Source      types.String       `tfsdk:"source"`
-	Config      *TransformerConfig `tfsdk:"config"`
-	AccountId   types.String       `tfsdk:"account_id"`
+	Id          types.String                         `tfsdk:"id"`
+	Name        types.String                         `tfsdk:"name"`
+	Description types.String                         `tfsdk:"description"`
+	Source      types.String                         `tfsdk:"source"`
+	Config      *transformer_model.TransformerConfig `tfsdk:"config"`
+	AccountId   types.String                         `tfsdk:"account_id"`
 }
 
 func (r *UserDefinedTransformerResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -275,7 +276,8 @@ func fromTransformerDto(dto *mgmtv1alpha1.UserDefinedTransformer) (*UserDefinedT
 	if dto == nil {
 		return nil, errors.New("dto was nil")
 	}
-	configModel, err := toTransformerConfigFromDto(dto.Config)
+	configModel := &transformer_model.Transformer{}
+	err := configModel.FromDto(dto.GetConfig())
 	if err != nil {
 		return nil, err
 	}
@@ -285,7 +287,7 @@ func fromTransformerDto(dto *mgmtv1alpha1.UserDefinedTransformer) (*UserDefinedT
 		AccountId:   types.StringValue(dto.AccountId),
 		Description: types.StringValue(dto.Description),
 		Source:      types.StringValue(transformerSourceToStateSource(dto.Source)),
-		Config:      configModel,
+		Config:      configModel.Config,
 	}
 	return model, nil
 }
@@ -294,10 +296,12 @@ func toTransformerDto(model *UserDefinedTransformerResourceModel) (*mgmtv1alpha1
 	if model == nil {
 		return nil, errors.New("model was nil")
 	}
-	configDto, err := fromModelTransformerConfig(model.Config)
+
+	configDto, err := model.Config.ToDto()
 	if err != nil {
 		return nil, err
 	}
+
 	dto := &mgmtv1alpha1.UserDefinedTransformer{
 		Id:          model.Id.ValueString(),
 		Name:        model.Name.ValueString(),
