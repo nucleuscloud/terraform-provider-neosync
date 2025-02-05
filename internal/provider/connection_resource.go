@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	mgmtv1alpha1 "github.com/nucleuscloud/neosync/backend/gen/go/protos/mgmt/v1alpha1"
 	"github.com/nucleuscloud/neosync/backend/gen/go/protos/mgmt/v1alpha1/mgmtv1alpha1connect"
+	connection_model "github.com/nucleuscloud/terraform-provider-neosync/internal/models/connections"
 )
 
 var _ resource.Resource = &ConnectionResource{}
@@ -26,70 +27,6 @@ func NewConnectionResource() resource.Resource {
 type ConnectionResource struct {
 	client    mgmtv1alpha1connect.ConnectionServiceClient
 	accountId *string
-}
-
-type ConnectionResourceModel struct {
-	Id        types.String `tfsdk:"id"`
-	Name      types.String `tfsdk:"name"`
-	AccountId types.String `tfsdk:"account_id"`
-
-	Postgres *Postgres `tfsdk:"postgres"`
-	Mysql    *Mysql    `tfsdk:"mysql"`
-	AwsS3    *AwsS3    `tfsdk:"aws_s3"`
-}
-
-type AwsS3 struct {
-	Bucket      types.String    `tfsdk:"bucket"`
-	PathPrefix  types.String    `tfsdk:"path_prefix"`
-	Region      types.String    `tfsdk:"region"`
-	Endpoint    types.String    `tfsdk:"endpoint"`
-	Credentials *AwsCredentials `tfsdk:"credentials"`
-}
-
-type AwsCredentials struct {
-	Profile         types.String `tfsdk:"profile"`
-	AccessKeyId     types.String `tfsdk:"access_key_id"`
-	SecretAccessKey types.String `tfsdk:"secret_access_key"`
-	SessionToken    types.String `tfsdk:"session_token"`
-	FromEc2Role     types.Bool   `tfsdk:"from_ec2_role"`
-	RoleArn         types.String `tfsdk:"role_arn"`
-	RoleExternalId  types.String `tfsdk:"role_external_id"`
-}
-
-type Postgres struct {
-	Url types.String `tfsdk:"url"`
-
-	Host    types.String `tfsdk:"host"`
-	Port    types.Int64  `tfsdk:"port"`
-	Name    types.String `tfsdk:"name"`
-	User    types.String `tfsdk:"user"`
-	Pass    types.String `tfsdk:"pass"`
-	SslMode types.String `tfsdk:"ssl_mode"`
-
-	Tunnel *SSHTunnel `tfsdk:"tunnel"`
-}
-
-type Mysql struct {
-	Url types.String `tfsdk:"url"`
-
-	Host     types.String `tfsdk:"host"`
-	Port     types.Int64  `tfsdk:"port"`
-	Name     types.String `tfsdk:"name"`
-	User     types.String `tfsdk:"user"`
-	Pass     types.String `tfsdk:"pass"`
-	Protocol types.String `tfsdk:"protocol"`
-
-	Tunnel *SSHTunnel `tfsdk:"tunnel"`
-}
-
-type SSHTunnel struct {
-	Host               types.String `tfsdk:"host"`
-	Port               types.Int64  `tfsdk:"port"`
-	User               types.String `tfsdk:"user"`
-	KnownHostPublicKey types.String `tfsdk:"known_host_public_key"`
-
-	PrivateKey types.String `tfsdk:"private_key"`
-	Passphrase types.String `tfsdk:"passphrase"`
 }
 
 func (r *ConnectionResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -315,326 +252,51 @@ func (r *ConnectionResource) Configure(ctx context.Context, req resource.Configu
 	r.accountId = providerData.AccountId
 }
 
-func hydrateTunnelFromTunnelConfig(t *mgmtv1alpha1.SSHTunnel) *SSHTunnel {
-	if t == nil {
-		return nil
-	}
-
-	tunnel := &SSHTunnel{
-		Host:               types.StringValue(t.Host),
-		Port:               types.Int64Value(int64(t.Port)),
-		User:               types.StringValue(t.User),
-		KnownHostPublicKey: types.StringPointerValue(t.KnownHostPublicKey),
-	}
-
-	if t.Authentication != nil {
-		switch auth := t.Authentication.AuthConfig.(type) {
-		case *mgmtv1alpha1.SSHAuthentication_PrivateKey:
-			tunnel.PrivateKey = types.StringValue(auth.PrivateKey.Value)
-			tunnel.Passphrase = types.StringPointerValue(auth.PrivateKey.Passphrase)
-		case *mgmtv1alpha1.SSHAuthentication_Passphrase:
-			tunnel.Passphrase = types.StringValue(auth.Passphrase.Value)
-		}
-	}
-	return tunnel
-}
-
-func hydrateResourceModelFromConnectionConfig(cc *mgmtv1alpha1.ConnectionConfig, data *ConnectionResourceModel) error {
-	switch config := cc.Config.(type) {
-	case *mgmtv1alpha1.ConnectionConfig_PgConfig:
-		switch pgcc := config.PgConfig.ConnectionConfig.(type) {
-		case *mgmtv1alpha1.PostgresConnectionConfig_Connection:
-			data.Postgres = &Postgres{
-				Host:    types.StringValue(pgcc.Connection.Host),
-				Port:    types.Int64Value(int64(pgcc.Connection.Port)),
-				Name:    types.StringValue(pgcc.Connection.Name),
-				User:    types.StringValue(pgcc.Connection.User),
-				Pass:    types.StringValue(pgcc.Connection.Pass),
-				SslMode: types.StringPointerValue(pgcc.Connection.SslMode),
-				Tunnel:  hydrateTunnelFromTunnelConfig(config.PgConfig.Tunnel),
-			}
-
-			return nil
-		case *mgmtv1alpha1.PostgresConnectionConfig_Url:
-			data.Postgres = &Postgres{
-				Url:    types.StringValue(pgcc.Url),
-				Tunnel: hydrateTunnelFromTunnelConfig(config.PgConfig.Tunnel),
-			}
-			return nil
-		default:
-			return errors.New("unable to find a config to hydrate connection resource model")
-		}
-	case *mgmtv1alpha1.ConnectionConfig_MysqlConfig:
-		switch mycc := config.MysqlConfig.ConnectionConfig.(type) {
-		case *mgmtv1alpha1.MysqlConnectionConfig_Connection:
-			data.Mysql = &Mysql{
-				Host:     types.StringValue(mycc.Connection.Host),
-				Port:     types.Int64Value(int64(mycc.Connection.Port)),
-				Name:     types.StringValue(mycc.Connection.Name),
-				User:     types.StringValue(mycc.Connection.User),
-				Pass:     types.StringValue(mycc.Connection.Pass),
-				Protocol: types.StringValue(mycc.Connection.Protocol),
-				Tunnel:   hydrateTunnelFromTunnelConfig(config.MysqlConfig.Tunnel),
-			}
-			return nil
-		case *mgmtv1alpha1.MysqlConnectionConfig_Url:
-			data.Mysql = &Mysql{
-				Url:    types.StringValue(mycc.Url),
-				Tunnel: hydrateTunnelFromTunnelConfig(config.MysqlConfig.Tunnel),
-			}
-			return nil
-		default:
-			return errors.New("unable to findconfig to hydrate connection resource model")
-		}
-	case *mgmtv1alpha1.ConnectionConfig_AwsS3Config:
-		data.AwsS3 = &AwsS3{
-			Bucket:     types.StringValue(config.AwsS3Config.Bucket),
-			PathPrefix: types.StringPointerValue(config.AwsS3Config.PathPrefix),
-			Region:     types.StringPointerValue(config.AwsS3Config.Region),
-			Endpoint:   types.StringPointerValue(config.AwsS3Config.Endpoint),
-		}
-		if !isAwsCredentialsEmpty(config.AwsS3Config.Credentials) {
-			data.AwsS3.Credentials = &AwsCredentials{}
-			data.AwsS3.Credentials.Profile = types.StringPointerValue(config.AwsS3Config.Credentials.Profile)
-			data.AwsS3.Credentials.AccessKeyId = types.StringPointerValue(config.AwsS3Config.Credentials.AccessKeyId)
-			data.AwsS3.Credentials.SecretAccessKey = types.StringPointerValue(config.AwsS3Config.Credentials.SecretAccessKey)
-			data.AwsS3.Credentials.SessionToken = types.StringPointerValue(config.AwsS3Config.Credentials.SessionToken)
-			data.AwsS3.Credentials.FromEc2Role = types.BoolPointerValue(config.AwsS3Config.Credentials.FromEc2Role)
-			data.AwsS3.Credentials.RoleArn = types.StringPointerValue(config.AwsS3Config.Credentials.RoleArn)
-			data.AwsS3.Credentials.RoleExternalId = types.StringPointerValue(config.AwsS3Config.Credentials.RoleExternalId)
-		}
-		return nil
-	default:
-		return errors.New("unable to find a config to hydrate connection resource model")
-	}
-}
-
-func isAwsCredentialsEmpty(creds *mgmtv1alpha1.AwsS3Credentials) bool {
-	if creds == nil {
-		return true
-	}
-	return creds.Profile == nil && creds.AccessKeyId == nil && creds.SecretAccessKey == nil && creds.SessionToken == nil &&
-		creds.FromEc2Role == nil && creds.RoleArn == nil && creds.RoleExternalId == nil
-}
-
-func getConnectionConfigFromResourceModel(data *ConnectionResourceModel) (*mgmtv1alpha1.ConnectionConfig, error) {
-	if data.Postgres != nil {
-		var tunnel *mgmtv1alpha1.SSHTunnel
-		if data.Postgres.Tunnel != nil {
-			tunnel = &mgmtv1alpha1.SSHTunnel{
-				Host:               data.Postgres.Tunnel.Host.ValueString(),
-				Port:               int32(data.Postgres.Tunnel.Port.ValueInt64()),
-				User:               data.Postgres.Tunnel.User.ValueString(),
-				KnownHostPublicKey: data.Postgres.Tunnel.KnownHostPublicKey.ValueStringPointer(),
-			}
-			if data.Postgres.Tunnel.PrivateKey.ValueString() != "" {
-				tunnel.Authentication = &mgmtv1alpha1.SSHAuthentication{
-					AuthConfig: &mgmtv1alpha1.SSHAuthentication_PrivateKey{
-						PrivateKey: &mgmtv1alpha1.SSHPrivateKey{
-							Value:      data.Postgres.Tunnel.PrivateKey.ValueString(),
-							Passphrase: data.Postgres.Tunnel.Passphrase.ValueStringPointer(),
-						},
-					},
-				}
-			} else if data.Postgres.Tunnel.Passphrase.ValueString() != "" {
-				tunnel.Authentication = &mgmtv1alpha1.SSHAuthentication{
-					AuthConfig: &mgmtv1alpha1.SSHAuthentication_Passphrase{
-						Passphrase: &mgmtv1alpha1.SSHPassphrase{
-							Value: data.Postgres.Tunnel.Passphrase.ValueString(),
-						},
-					},
-				}
-			}
-		}
-		if data.Postgres.Url.ValueString() != "" {
-			return &mgmtv1alpha1.ConnectionConfig{
-				Config: &mgmtv1alpha1.ConnectionConfig_PgConfig{
-					PgConfig: &mgmtv1alpha1.PostgresConnectionConfig{
-						ConnectionConfig: &mgmtv1alpha1.PostgresConnectionConfig_Url{
-							Url: data.Postgres.Url.ValueString(),
-						},
-						Tunnel: tunnel,
-					},
-				},
-			}, nil
-		} else {
-			pg := data.Postgres
-			if pg.Host.ValueString() == "" || pg.Port.ValueInt64() == 0 || pg.Name.ValueString() == "" || pg.User.ValueString() == "" || pg.Pass.ValueString() == "" {
-				return nil, fmt.Errorf("invalid postgres config")
-			}
-			return &mgmtv1alpha1.ConnectionConfig{
-				Config: &mgmtv1alpha1.ConnectionConfig_PgConfig{
-					PgConfig: &mgmtv1alpha1.PostgresConnectionConfig{
-						ConnectionConfig: &mgmtv1alpha1.PostgresConnectionConfig_Connection{
-							Connection: &mgmtv1alpha1.PostgresConnection{
-								Host:    pg.Host.ValueString(),
-								Port:    int32(pg.Port.ValueInt64()),
-								Name:    pg.Name.ValueString(),
-								User:    pg.User.ValueString(),
-								Pass:    pg.Pass.ValueString(),
-								SslMode: pg.SslMode.ValueStringPointer(),
-							},
-						},
-						Tunnel: tunnel,
-					},
-				},
-			}, nil
-		}
-	}
-	if data.Mysql != nil {
-		var tunnel *mgmtv1alpha1.SSHTunnel
-		if data.Mysql.Tunnel != nil {
-			tunnel = &mgmtv1alpha1.SSHTunnel{
-				Host:               data.Mysql.Tunnel.Host.ValueString(),
-				Port:               int32(data.Mysql.Tunnel.Port.ValueInt64()),
-				User:               data.Mysql.Tunnel.User.ValueString(),
-				KnownHostPublicKey: data.Mysql.Tunnel.KnownHostPublicKey.ValueStringPointer(),
-			}
-			if data.Mysql.Tunnel.PrivateKey.ValueString() != "" {
-				tunnel.Authentication = &mgmtv1alpha1.SSHAuthentication{
-					AuthConfig: &mgmtv1alpha1.SSHAuthentication_PrivateKey{
-						PrivateKey: &mgmtv1alpha1.SSHPrivateKey{
-							Value:      data.Mysql.Tunnel.PrivateKey.ValueString(),
-							Passphrase: data.Mysql.Tunnel.Passphrase.ValueStringPointer(),
-						},
-					},
-				}
-			} else if data.Mysql.Tunnel.Passphrase.ValueString() != "" {
-				tunnel.Authentication = &mgmtv1alpha1.SSHAuthentication{
-					AuthConfig: &mgmtv1alpha1.SSHAuthentication_Passphrase{
-						Passphrase: &mgmtv1alpha1.SSHPassphrase{
-							Value: data.Mysql.Tunnel.Passphrase.ValueString(),
-						},
-					},
-				}
-			}
-		}
-		if data.Mysql.Url.ValueString() != "" {
-			return &mgmtv1alpha1.ConnectionConfig{
-				Config: &mgmtv1alpha1.ConnectionConfig_MysqlConfig{
-					MysqlConfig: &mgmtv1alpha1.MysqlConnectionConfig{
-						ConnectionConfig: &mgmtv1alpha1.MysqlConnectionConfig_Url{
-							Url: data.Mysql.Url.ValueString(),
-						},
-						Tunnel: tunnel,
-					},
-				},
-			}, nil
-		} else {
-			mysql := data.Mysql
-			if mysql.Host.ValueString() == "" || mysql.Port.ValueInt64() == 0 || mysql.Name.ValueString() == "" || mysql.User.ValueString() == "" || mysql.Pass.ValueString() == "" || mysql.Protocol.ValueString() == "" {
-				return nil, fmt.Errorf("invalid mysql config")
-			}
-			return &mgmtv1alpha1.ConnectionConfig{
-				Config: &mgmtv1alpha1.ConnectionConfig_MysqlConfig{
-					MysqlConfig: &mgmtv1alpha1.MysqlConnectionConfig{
-						ConnectionConfig: &mgmtv1alpha1.MysqlConnectionConfig_Connection{
-							Connection: &mgmtv1alpha1.MysqlConnection{
-								Host:     mysql.Host.ValueString(),
-								Port:     int32(mysql.Port.ValueInt64()),
-								Name:     mysql.Name.ValueString(),
-								User:     mysql.User.ValueString(),
-								Pass:     mysql.Pass.ValueString(),
-								Protocol: mysql.Protocol.ValueString(),
-							},
-						},
-						Tunnel: tunnel,
-					},
-				},
-			}, nil
-		}
-	}
-	if data.AwsS3 != nil {
-		var creds *mgmtv1alpha1.AwsS3Credentials
-		if data.AwsS3.Credentials != nil {
-			creds = &mgmtv1alpha1.AwsS3Credentials{
-				Profile:         data.AwsS3.Credentials.Profile.ValueStringPointer(),
-				AccessKeyId:     data.AwsS3.Credentials.AccessKeyId.ValueStringPointer(),
-				SecretAccessKey: data.AwsS3.Credentials.SecretAccessKey.ValueStringPointer(),
-				SessionToken:    data.AwsS3.Credentials.SessionToken.ValueStringPointer(),
-				FromEc2Role:     data.AwsS3.Credentials.FromEc2Role.ValueBoolPointer(),
-				RoleArn:         data.AwsS3.Credentials.RoleArn.ValueStringPointer(),
-				RoleExternalId:  data.AwsS3.Credentials.RoleExternalId.ValueStringPointer(),
-			}
-		}
-		return &mgmtv1alpha1.ConnectionConfig{
-			Config: &mgmtv1alpha1.ConnectionConfig_AwsS3Config{
-				AwsS3Config: &mgmtv1alpha1.AwsS3ConnectionConfig{
-					Bucket:      data.AwsS3.Bucket.ValueString(),
-					PathPrefix:  data.AwsS3.PathPrefix.ValueStringPointer(),
-					Region:      data.AwsS3.Region.ValueStringPointer(),
-					Endpoint:    data.AwsS3.Endpoint.ValueStringPointer(),
-					Credentials: creds,
-				},
-			},
-		}, nil
-	}
-	return nil, errors.New("invalid connection config")
-}
-
 func (r *ConnectionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var data ConnectionResourceModel
+	var data connection_model.ConnectionResourceModel
 
-	// Read Terraform plan data into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
-
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	var accountId string
-	if data.AccountId.ValueString() == "" {
-		if r.accountId != nil {
-			accountId = *r.accountId
-		}
-	} else {
-		accountId = data.AccountId.ValueString()
+	accountId, err := r.getAccountId(&data)
+	if err != nil {
+		resp.Diagnostics.AddError("no account id", err.Error())
+		return
 	}
-	if accountId == "" {
-		resp.Diagnostics.AddError("no account id", "must provide account id either on the resource or provide through environment configuration")
+	data.AccountId = types.StringValue(accountId)
+
+	createRequest, err := data.ToCreateConnectionDto()
+	if err != nil {
+		resp.Diagnostics.AddError("unable to create connection request", err.Error())
 		return
 	}
 
-	cc, err := getConnectionConfigFromResourceModel(&data)
-	if err != nil {
-		resp.Diagnostics.AddError("connection config error", err.Error())
-		return
-	}
-	connResp, err := r.client.CreateConnection(ctx, connect.NewRequest(&mgmtv1alpha1.CreateConnectionRequest{
-		Name:             data.Name.ValueString(),
-		AccountId:        accountId,
-		ConnectionConfig: cc,
-	}))
+	createResp, err := r.client.CreateConnection(ctx, connect.NewRequest(createRequest))
 	if err != nil {
 		resp.Diagnostics.AddError("create connection error", err.Error())
 		return
 	}
 
-	connection := connResp.Msg.Connection
+	connection := createResp.Msg.GetConnection()
+	tflog.Trace(ctx, "created connection")
 
-	data.Id = types.StringValue(connection.Id)
-	data.Name = types.StringValue(connection.Name)
-	data.AccountId = types.StringValue(connection.AccountId)
-	err = hydrateResourceModelFromConnectionConfig(connection.ConnectionConfig, &data)
+	newModel := connection_model.ConnectionResourceModel{}
+	err = newModel.FromDto(connection)
 	if err != nil {
-		resp.Diagnostics.AddError("connection config hydration error", err.Error())
+		resp.Diagnostics.AddError("connection model hydration error", err.Error())
 		return
 	}
+	tflog.Trace(ctx, "mapped connection to model during creation")
 
-	// Write logs using the tflog package
-	// Documentation: https://terraform.io/plugin/log
-	tflog.Trace(ctx, "created connection resource")
-
-	// Save data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &newModel)...)
 }
 
 func (r *ConnectionResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var data ConnectionResourceModel
+	var data connection_model.ConnectionResourceModel
 
-	// Read Terraform prior state data into the model
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
-
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -647,69 +309,60 @@ func (r *ConnectionResource) Read(ctx context.Context, req resource.ReadRequest,
 		return
 	}
 
-	connection := connResp.Msg.Connection
+	tflog.Trace(ctx, "retrieved connection")
 
-	data.Id = types.StringValue(connection.Id)
-	data.Name = types.StringValue(connection.Name)
-	data.AccountId = types.StringValue(connection.AccountId)
-	err = hydrateResourceModelFromConnectionConfig(connection.ConnectionConfig, &data)
+	connection := connResp.Msg.GetConnection()
+
+	newModel := connection_model.ConnectionResourceModel{}
+	err = newModel.FromDto(connection)
 	if err != nil {
-		resp.Diagnostics.AddError("connection config hydration error", err.Error())
+		resp.Diagnostics.AddError("connection model hydration error", err.Error())
 		return
 	}
+	tflog.Trace(ctx, "mapped connection to model during read")
 
-	// Save updated data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &newModel)...)
 }
 
 func (r *ConnectionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data ConnectionResourceModel
+	var data connection_model.ConnectionResourceModel
 
-	// Read Terraform plan data into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
-
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	tflog.Trace(ctx, "read in planned model during update")
 
-	cc, err := getConnectionConfigFromResourceModel(&data)
+	updateRequest, err := data.ToUpdateConnectionDto()
 	if err != nil {
-		resp.Diagnostics.AddError("connection config error", err.Error())
+		resp.Diagnostics.AddError("unable to map connection model to update request", err.Error())
 		return
 	}
 
-	connResp, err := r.client.UpdateConnection(ctx, connect.NewRequest(&mgmtv1alpha1.UpdateConnectionRequest{
-		Id:               data.Id.ValueString(),
-		Name:             data.Name.ValueString(),
-		ConnectionConfig: cc,
-	}))
+	updateResp, err := r.client.UpdateConnection(ctx, connect.NewRequest(updateRequest))
 	if err != nil {
-		resp.Diagnostics.AddError("Unable to update connection", err.Error())
+		resp.Diagnostics.AddError("unable to update connection", err.Error())
 		return
 	}
-
-	connection := connResp.Msg.Connection
-
-	data.Id = types.StringValue(connection.Id)
-	data.Name = types.StringValue(connection.Name)
-	data.AccountId = types.StringValue(connection.AccountId)
-	err = hydrateResourceModelFromConnectionConfig(connection.ConnectionConfig, &data)
-	if err != nil {
-		resp.Diagnostics.AddError("connection config hydration error", err.Error())
-		return
-	}
-
 	tflog.Trace(ctx, "updated connection")
-	// Save updated data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+
+	updatedConnection := updateResp.Msg.GetConnection()
+
+	newModel := connection_model.ConnectionResourceModel{}
+	err = newModel.FromDto(updatedConnection)
+	if err != nil {
+		resp.Diagnostics.AddError("connection model hydration error", err.Error())
+		return
+	}
+	tflog.Trace(ctx, "mapped connection to model during update")
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &newModel)...)
 }
 
 func (r *ConnectionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var data ConnectionResourceModel
+	var data connection_model.ConnectionResourceModel
 
-	// Read Terraform prior state data into the model
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
-
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -738,19 +391,32 @@ func (r *ConnectionResource) ImportState(ctx context.Context, req resource.Impor
 		resp.Diagnostics.AddError("Unable to get connection", err.Error())
 		return
 	}
+	tflog.Trace(ctx, "retrieved connection during import")
 
-	connection := connResp.Msg.Connection
+	connection := connResp.Msg.GetConnection()
 
-	var data ConnectionResourceModel
-	data.Id = types.StringValue(connection.Id)
-	data.Name = types.StringValue(connection.Name)
-	data.AccountId = types.StringValue(connection.AccountId)
-	err = hydrateResourceModelFromConnectionConfig(connection.ConnectionConfig, &data)
+	var data connection_model.ConnectionResourceModel
+	err = data.FromDto(connection)
 	if err != nil {
 		resp.Diagnostics.AddError("connection config hydration error", err.Error())
 		return
 	}
 
-	// Save updated data into Terraform state
+	tflog.Trace(ctx, "mapped connection to model during import")
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func (r *ConnectionResource) getAccountId(data *connection_model.ConnectionResourceModel) (string, error) {
+	var accountId string
+	if data.AccountId.ValueString() == "" {
+		if r.accountId != nil {
+			accountId = *r.accountId
+		}
+	} else {
+		accountId = data.AccountId.ValueString()
+	}
+	if accountId == "" {
+		return "", errors.New("must provide account id either on the resource or provide through environment configuration")
+	}
+	return accountId, nil
 }
