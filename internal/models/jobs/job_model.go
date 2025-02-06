@@ -199,16 +199,29 @@ func (j *JobResourceModel) ToCreateJobDto() (*mgmtv1alpha1.CreateJobRequest, err
 		}
 	}
 
+	var virtualForeignKeys []*mgmtv1alpha1.VirtualForeignConstraint
+	if len(j.VirtualForeignKeys) > 0 {
+		virtualForeignKeys = make([]*mgmtv1alpha1.VirtualForeignConstraint, 0, len(j.VirtualForeignKeys))
+		for _, vfk := range j.VirtualForeignKeys {
+			vfkDto, err := vfk.ToDto()
+			if err != nil {
+				return nil, err
+			}
+			virtualForeignKeys = append(virtualForeignKeys, vfkDto)
+		}
+	}
+
 	return &mgmtv1alpha1.CreateJobRequest{
-		JobName:         j.Name.ValueString(),
-		AccountId:       j.AccountId.ValueString(),
-		CronSchedule:    j.CronSchedule.ValueStringPointer(),
-		Mappings:        mappings,
-		Source:          source,
-		Destinations:    destinations,
-		InitiateJobRun:  false,
-		WorkflowOptions: workflowOpts,
-		SyncOptions:     syncOpts,
+		JobName:            j.Name.ValueString(),
+		AccountId:          j.AccountId.ValueString(),
+		CronSchedule:       j.CronSchedule.ValueStringPointer(),
+		Mappings:           mappings,
+		Source:             source,
+		Destinations:       destinations,
+		InitiateJobRun:     false,
+		WorkflowOptions:    workflowOpts,
+		SyncOptions:        syncOpts,
+		VirtualForeignKeys: virtualForeignKeys,
 	}, nil
 }
 
@@ -245,11 +258,25 @@ func (j *JobResourceModel) ToUpdateJobDto(planModel *JobResourceModel, jobId str
 	if err != nil {
 		return nil, err
 	}
+
+	var virtualForeignKeys []*mgmtv1alpha1.VirtualForeignConstraint
+	if len(planModel.VirtualForeignKeys) > 0 {
+		virtualForeignKeys = make([]*mgmtv1alpha1.VirtualForeignConstraint, 0, len(planModel.VirtualForeignKeys))
+		for _, vfk := range planModel.VirtualForeignKeys {
+			vfkDto, err := vfk.ToDto()
+			if err != nil {
+				return nil, err
+			}
+			virtualForeignKeys = append(virtualForeignKeys, vfkDto)
+		}
+	}
+
 	// todo: compare plan and state and only conditionally create request if there are actually changes
 	updateJobSourceConnectionRequest := &mgmtv1alpha1.UpdateJobSourceConnectionRequest{
-		Id:       j.Id.ValueString(),
-		Source:   newSource,
-		Mappings: newMappings,
+		Id:                 j.Id.ValueString(),
+		Source:             newSource,
+		Mappings:           newMappings,
+		VirtualForeignKeys: virtualForeignKeys,
 	}
 
 	destinationsToCreate := []*JobDestination{}
