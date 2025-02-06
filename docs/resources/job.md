@@ -183,11 +183,29 @@ Optional:
 Required:
 
 - `connection_id` (String) The unique identifier of the connection that is to be used as the source
-- `halt_on_new_column_addition` (Boolean) Whether or not to halt the job if it detects a new column that has been added in the source that has not been defined in the mappings schema
 
 Optional:
 
+- `column_removal_strategy` (Attributes) Strategy for handling column removals (see [below for nested schema](#nestedatt--source--mysql--column_removal_strategy))
 - `schemas` (Attributes List) A list of schemas and table specific options (see [below for nested schema](#nestedatt--source--mysql--schemas))
+- `subset_by_foreign_key_constraints` (Boolean) Whether or not to subset the source tables by foreign key constraints
+
+<a id="nestedatt--source--mysql--column_removal_strategy"></a>
+### Nested Schema for `source.mysql.column_removal_strategy`
+
+Optional:
+
+- `continue_job` (Attributes) Continue job even if a column is detected (see [below for nested schema](#nestedatt--source--mysql--column_removal_strategy--continue_job))
+- `halt_job` (Attributes) Halt job if a column is detected (see [below for nested schema](#nestedatt--source--mysql--column_removal_strategy--halt_job))
+
+<a id="nestedatt--source--mysql--column_removal_strategy--continue_job"></a>
+### Nested Schema for `source.mysql.column_removal_strategy.continue_job`
+
+
+<a id="nestedatt--source--mysql--column_removal_strategy--halt_job"></a>
+### Nested Schema for `source.mysql.column_removal_strategy.halt_job`
+
+
 
 <a id="nestedatt--source--mysql--schemas"></a>
 ### Nested Schema for `source.mysql.schemas`
@@ -220,9 +238,27 @@ Required:
 
 Optional:
 
-- `halt_on_new_column_addition` (Boolean) (Deprecated) Whether or not to halt the job if it detects a new column that has been added in the source that has not been defined in the mappings schema
+- `column_removal_strategy` (Attributes) Strategy for handling column removals (see [below for nested schema](#nestedatt--source--postgres--column_removal_strategy))
 - `new_column_addition_strategy` (Attributes) Strategy for handling new column additions (see [below for nested schema](#nestedatt--source--postgres--new_column_addition_strategy))
 - `schemas` (Attributes List) A list of schemas and table specific options (see [below for nested schema](#nestedatt--source--postgres--schemas))
+- `subset_by_foreign_key_constraints` (Boolean) Whether or not to subset the source tables by foreign key constraints
+
+<a id="nestedatt--source--postgres--column_removal_strategy"></a>
+### Nested Schema for `source.postgres.column_removal_strategy`
+
+Optional:
+
+- `continue_job` (Attributes) Continue job even if a column is detected (see [below for nested schema](#nestedatt--source--postgres--column_removal_strategy--continue_job))
+- `halt_job` (Attributes) Halt job if a column is detected (see [below for nested schema](#nestedatt--source--postgres--column_removal_strategy--halt_job))
+
+<a id="nestedatt--source--postgres--column_removal_strategy--continue_job"></a>
+### Nested Schema for `source.postgres.column_removal_strategy.continue_job`
+
+
+<a id="nestedatt--source--postgres--column_removal_strategy--halt_job"></a>
+### Nested Schema for `source.postgres.column_removal_strategy.halt_job`
+
+
 
 <a id="nestedatt--source--postgres--new_column_addition_strategy"></a>
 ### Nested Schema for `source.postgres.new_column_addition_strategy`
