@@ -47,17 +47,27 @@ resource "neosync_job" "prod_to_stage" {
           passthrough = {}
         }
       }
+    },
+    {
+      schema = "public"
+      table  = "accounts"
+      column = "user_id"
+      transformer = {
+        config = {
+          passthrough = {}
+        }
+      }
     }
   ]
   virtual_foreign_keys = [
     {
       schema  = "public"
-      table   = "users"
-      columns = ["id"]
+      table   = "accounts"
+      columns = ["user_id"]
       foreign_key = {
         schema  = "public"
-        table   = "accounts"
-        columns = ["user_id"]
+        table   = "users"
+        columns = ["id"]
       }
     }
   ]
