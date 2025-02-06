@@ -18,8 +18,10 @@ resource "neosync_job" "prod_to_stage" {
 
   source = {
     postgres = {
-      halt_on_new_column_additon = false
-      connection_id              = var.prod_connection_id
+      new_column_addition_strategy = {
+        halt_job = {}
+      }
+      connection_id = var.prod_connection_id
     }
   }
   destinations = [
@@ -41,10 +43,21 @@ resource "neosync_job" "prod_to_stage" {
       table  = "users"
       column = "id"
       transformer = {
-        source = "passthrough"
         config = {
           passthrough = {}
         }
+      }
+    }
+  ]
+  virtual_foreign_keys = [
+    {
+      schema  = "public"
+      table   = "users"
+      columns = ["id"]
+      foreign_key = {
+        schema  = "public"
+        table   = "accounts"
+        columns = ["user_id"]
       }
     }
   ]
