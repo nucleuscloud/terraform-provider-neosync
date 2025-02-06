@@ -66,6 +66,7 @@ resource "neosync_job" "prod_to_stage" {
 - `cron_schedule` (String) A cron string for how often it's desired to schedule the job to run
 - `mappings` (Attributes List) Details each schema,table,column along with the transformation that will be executed (see [below for nested schema](#nestedatt--mappings))
 - `sync_options` (Attributes) Advanced settings and other options specific to a table sync (see [below for nested schema](#nestedatt--sync_options))
+- `virtual_foreign_keys` (Attributes List) A list of virtual foreign keys that will be used to further constrain the source tables (see [below for nested schema](#nestedatt--virtual_foreign_keys))
 - `workflow_options` (Attributes) Advanced settings and other options specific to a job run (see [below for nested schema](#nestedatt--workflow_options))
 
 ### Read-Only
@@ -653,6 +654,27 @@ Optional:
 Optional:
 
 - `maximum_attempts` (Number) The maximum number of times to retry if there is a failure or timeout
+
+
+
+<a id="nestedatt--virtual_foreign_keys"></a>
+### Nested Schema for `virtual_foreign_keys`
+
+Required:
+
+- `columns` (List of String) The columns that will be used to constrain the source table
+- `foreign_key` (Attributes) The foreign key that will be used to constrain the source table (see [below for nested schema](#nestedatt--virtual_foreign_keys--foreign_key))
+- `schema` (String) The database schema
+- `table` (String) The database table
+
+<a id="nestedatt--virtual_foreign_keys--foreign_key"></a>
+### Nested Schema for `virtual_foreign_keys.foreign_key`
+
+Required:
+
+- `columns` (List of String) The columns that will be used to constrain the source table
+- `schema` (String) The database schema
+- `table` (String) The database table
 
 
 
