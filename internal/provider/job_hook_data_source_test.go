@@ -32,7 +32,6 @@ resource "neosync_job" "job1" {
 	name = "%[1]s"
 	source = {
 		postgres = {
-			halt_on_new_column_addition = false
 			connection_id = neosync_connection.source.id
 		}
 	}
