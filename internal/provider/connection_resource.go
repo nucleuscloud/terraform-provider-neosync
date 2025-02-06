@@ -95,19 +95,19 @@ var (
 		Description: "SQL connection options",
 		Optional:    true,
 		Attributes: map[string]schema.Attribute{
-			"max_idle_conns": schema.Int64Attribute{
+			"max_idle_connections": schema.Int32Attribute{
 				Description: "The maximum number of idle connections to the database",
 				Optional:    true,
 			},
-			"max_open_conns": schema.Int64Attribute{
+			"max_open_connections": schema.Int32Attribute{
 				Description: "The maximum number of open connections to the database",
 				Optional:    true,
 			},
-			"conn_max_lifetime": schema.Int64Attribute{
+			"max_idle_duration": schema.StringAttribute{
 				Description: "The maximum amount of time a connection may be reused",
 				Optional:    true,
 			},
-			"conn_max_idle_time": schema.Int64Attribute{
+			"max_open_duration": schema.StringAttribute{
 				Description: "The maximum amount of time a connection may be idle",
 				Optional:    true,
 			},
@@ -340,7 +340,6 @@ func (r *ConnectionResource) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 	tflog.Trace(ctx, "mapped connection to model during creation")
-
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newModel)...)
 }
 

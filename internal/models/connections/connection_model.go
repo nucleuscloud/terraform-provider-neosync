@@ -79,7 +79,7 @@ type SSHTunnel struct {
 }
 
 type SqlConnectionOptions struct {
-	MaxConnectionLimit *int32  `tfsdk:"max_connection_limit"`
+	MaxOpenConnections *int32  `tfsdk:"max_open_connections"`
 	MaxIdleConnections *int32  `tfsdk:"max_idle_connections"`
 	MaxIdleDuration    *string `tfsdk:"max_idle_duration"`
 	MaxOpenDuration    *string `tfsdk:"max_open_duration"`
@@ -91,7 +91,7 @@ func (c *SqlConnectionOptions) ToDto() (*mgmtv1alpha1.SqlConnectionOptions, erro
 	}
 
 	return &mgmtv1alpha1.SqlConnectionOptions{
-		MaxConnectionLimit: c.MaxConnectionLimit,
+		MaxConnectionLimit: c.MaxOpenConnections,
 		MaxIdleConnections: c.MaxIdleConnections,
 		MaxIdleDuration:    c.MaxIdleDuration,
 		MaxOpenDuration:    c.MaxOpenDuration,
@@ -107,7 +107,7 @@ func (c *SqlConnectionOptions) FromDto(dto *mgmtv1alpha1.SqlConnectionOptions) e
 		return errors.New("sql connection options dto is nil")
 	}
 
-	c.MaxConnectionLimit = dto.MaxConnectionLimit
+	c.MaxOpenConnections = dto.MaxConnectionLimit
 	c.MaxIdleConnections = dto.MaxIdleConnections
 	c.MaxIdleDuration = dto.MaxIdleDuration
 	c.MaxOpenDuration = dto.MaxOpenDuration
@@ -386,7 +386,18 @@ func (c *ConnectionResourceModel) FromConnectionConfigDto(dto *mgmtv1alpha1.Conn
 					return err
 				}
 			}
-
+			if config.PgConfig.ConnectionOptions != nil {
+				c.Postgres.ConnectionOptions = &SqlConnectionOptions{}
+				if err := c.Postgres.ConnectionOptions.FromDto(config.PgConfig.ConnectionOptions); err != nil {
+					return err
+				}
+			}
+			if config.PgConfig.ClientTls != nil {
+				c.Postgres.ClientTls = &ClientTlsConfig{}
+				if err := c.Postgres.ClientTls.FromDto(config.PgConfig.ClientTls); err != nil {
+					return err
+				}
+			}
 			return nil
 		case *mgmtv1alpha1.PostgresConnectionConfig_Url:
 			c.Postgres = &Postgres{
@@ -396,6 +407,18 @@ func (c *ConnectionResourceModel) FromConnectionConfigDto(dto *mgmtv1alpha1.Conn
 			if config.PgConfig.Tunnel != nil {
 				c.Postgres.Tunnel = &SSHTunnel{}
 				if err := c.Postgres.Tunnel.FromDto(config.PgConfig.Tunnel); err != nil {
+					return err
+				}
+			}
+			if config.PgConfig.ConnectionOptions != nil {
+				c.Postgres.ConnectionOptions = &SqlConnectionOptions{}
+				if err := c.Postgres.ConnectionOptions.FromDto(config.PgConfig.ConnectionOptions); err != nil {
+					return err
+				}
+			}
+			if config.PgConfig.ClientTls != nil {
+				c.Postgres.ClientTls = &ClientTlsConfig{}
+				if err := c.Postgres.ClientTls.FromDto(config.PgConfig.ClientTls); err != nil {
 					return err
 				}
 			}
@@ -421,6 +444,18 @@ func (c *ConnectionResourceModel) FromConnectionConfigDto(dto *mgmtv1alpha1.Conn
 					return err
 				}
 			}
+			if config.MysqlConfig.ConnectionOptions != nil {
+				c.Mysql.ConnectionOptions = &SqlConnectionOptions{}
+				if err := c.Mysql.ConnectionOptions.FromDto(config.MysqlConfig.ConnectionOptions); err != nil {
+					return err
+				}
+			}
+			if config.MysqlConfig.ClientTls != nil {
+				c.Mysql.ClientTls = &ClientTlsConfig{}
+				if err := c.Mysql.ClientTls.FromDto(config.MysqlConfig.ClientTls); err != nil {
+					return err
+				}
+			}
 			return nil
 		case *mgmtv1alpha1.MysqlConnectionConfig_Url:
 			c.Mysql = &Mysql{
@@ -430,6 +465,18 @@ func (c *ConnectionResourceModel) FromConnectionConfigDto(dto *mgmtv1alpha1.Conn
 			if config.MysqlConfig.Tunnel != nil {
 				c.Mysql.Tunnel = &SSHTunnel{}
 				if err := c.Mysql.Tunnel.FromDto(config.MysqlConfig.Tunnel); err != nil {
+					return err
+				}
+			}
+			if config.MysqlConfig.ConnectionOptions != nil {
+				c.Mysql.ConnectionOptions = &SqlConnectionOptions{}
+				if err := c.Mysql.ConnectionOptions.FromDto(config.MysqlConfig.ConnectionOptions); err != nil {
+					return err
+				}
+			}
+			if config.MysqlConfig.ClientTls != nil {
+				c.Mysql.ClientTls = &ClientTlsConfig{}
+				if err := c.Mysql.ClientTls.FromDto(config.MysqlConfig.ClientTls); err != nil {
 					return err
 				}
 			}

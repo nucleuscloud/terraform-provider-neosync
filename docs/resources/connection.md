@@ -42,6 +42,20 @@ resource "neosync_connection" "local_pg" {
       private_key           = "my-private-key"
       passphrase            = "test"
     }
+
+    connection_options = {
+      max_idle_connections = 10
+      max_open_connections = 20
+      max_idle_duration    = "3600"
+      max_open_duration    = "3700"
+    }
+
+    client_tls = {
+      root_cert   = "my-root-cert"
+      client_cert = "my-client-cert"
+      client_key  = "my-client-key"
+      server_name = "my-server-name"
+    }
   }
 }
 
@@ -154,6 +168,8 @@ Optional:
 
 Optional:
 
+- `client_tls` (Attributes) TLS configuration for the connection (see [below for nested schema](#nestedatt--mysql--client_tls))
+- `connection_options` (Attributes) SQL connection options (see [below for nested schema](#nestedatt--mysql--connection_options))
 - `host` (String) The host name of the mysql server
 - `name` (String) The name of the database that will be connected to
 - `pass` (String, Sensitive) The password that will be authenticated with
@@ -162,6 +178,28 @@ Optional:
 - `tunnel` (Attributes) SSH tunnel that is used to access databases that are not publicly accessible to the internet (see [below for nested schema](#nestedatt--mysql--tunnel))
 - `url` (String) Standard mysql url connection string.
 - `user` (String) The name of the user that will be authenticated with
+
+<a id="nestedatt--mysql--client_tls"></a>
+### Nested Schema for `mysql.client_tls`
+
+Optional:
+
+- `client_cert` (String) The client certificate in PEM format
+- `client_key` (String, Sensitive) The client key in PEM format
+- `root_cert` (String) The root certificate in PEM format
+- `server_name` (String) The expected server name
+
+
+<a id="nestedatt--mysql--connection_options"></a>
+### Nested Schema for `mysql.connection_options`
+
+Optional:
+
+- `max_idle_connections` (Number) The maximum number of idle connections to the database
+- `max_idle_duration` (String) The maximum amount of time a connection may be reused
+- `max_open_connections` (Number) The maximum number of open connections to the database
+- `max_open_duration` (String) The maximum amount of time a connection may be idle
+
 
 <a id="nestedatt--mysql--tunnel"></a>
 ### Nested Schema for `mysql.tunnel`
@@ -185,6 +223,8 @@ Optional:
 
 Optional:
 
+- `client_tls` (Attributes) TLS configuration for the connection (see [below for nested schema](#nestedatt--postgres--client_tls))
+- `connection_options` (Attributes) SQL connection options (see [below for nested schema](#nestedatt--postgres--connection_options))
 - `host` (String) The host name of the postgres server
 - `name` (String) The name of the database that will be connected to
 - `pass` (String, Sensitive) The password that will be authenticated with
@@ -193,6 +233,28 @@ Optional:
 - `tunnel` (Attributes) SSH tunnel that is used to access databases that are not publicly accessible to the internet (see [below for nested schema](#nestedatt--postgres--tunnel))
 - `url` (String) Standard postgres url connection string. Must be uri compliant
 - `user` (String) The name of the user that will be authenticated with
+
+<a id="nestedatt--postgres--client_tls"></a>
+### Nested Schema for `postgres.client_tls`
+
+Optional:
+
+- `client_cert` (String) The client certificate in PEM format
+- `client_key` (String, Sensitive) The client key in PEM format
+- `root_cert` (String) The root certificate in PEM format
+- `server_name` (String) The expected server name
+
+
+<a id="nestedatt--postgres--connection_options"></a>
+### Nested Schema for `postgres.connection_options`
+
+Optional:
+
+- `max_idle_connections` (Number) The maximum number of idle connections to the database
+- `max_idle_duration` (String) The maximum amount of time a connection may be reused
+- `max_open_connections` (Number) The maximum number of open connections to the database
+- `max_open_duration` (String) The maximum amount of time a connection may be idle
+
 
 <a id="nestedatt--postgres--tunnel"></a>
 ### Nested Schema for `postgres.tunnel`
