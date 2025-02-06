@@ -413,8 +413,6 @@ func (j *JobResourceModel) FromDto(dto *mgmtv1alpha1.Job) error {
 		j.WorkflowOptions = workflowOpts
 	}
 
-	// dto.VirtualForeignKeys // todo
-	// implement this and the dtos
 	if len(dto.GetVirtualForeignKeys()) > 0 {
 		vkeys := make([]*VirtualForeignKeyConstraint, 0, len(dto.GetVirtualForeignKeys()))
 		for _, dtoVfkey := range dto.GetVirtualForeignKeys() {
