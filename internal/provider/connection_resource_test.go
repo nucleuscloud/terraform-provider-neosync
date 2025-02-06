@@ -198,6 +198,168 @@ resource "neosync_connection" "test1" {
 	})
 }
 
+func TestAcc_Connection_Postgres_Connection_ClientTls(t *testing.T) {
+	connectionName := acctest.RandString(10)
+
+	testAccConnectionConfig := fmt.Sprintf(`
+resource "neosync_connection" "test1" {
+  name = "%s"
+
+	postgres = {
+		host = "test-url"
+		port = 5432
+		name = "neosync"
+		user = "postgres"
+		pass = "postgres123"
+		ssl_mode = "disable"
+
+		client_tls = {
+			root_cert = "my-root-cert"
+			client_cert = "my-client-cert"
+			client_key = "my-client-key"
+			server_name = "my-server-name"
+		}
+	}
+}
+`, connectionName)
+	testAccConnectionConfigUpdated := fmt.Sprintf(`
+resource "neosync_connection" "test1" {
+  name = "%s"
+
+	postgres = {
+		host = "test-url"
+		port = 5432
+		name = "neosync"
+		user = "postgres"
+		pass = "postgres123"
+		ssl_mode = "disable"
+
+		client_tls = {
+			root_cert = "my-root-cert2"
+			client_cert = "my-client-cert2"
+			client_key = "my-client-key2"
+			server_name = "my-server-name2"
+		}
+	}
+}
+`, connectionName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccConnectionConfig,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("neosync_connection.test1", "id"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "name", connectionName),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.host", "test-url"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.port", "5432"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.name", "neosync"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.user", "postgres"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.pass", "postgres123"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.ssl_mode", "disable"),
+
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.client_tls.root_cert", "my-root-cert"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.client_tls.client_cert", "my-client-cert"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.client_tls.client_key", "my-client-key"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.client_tls.server_name", "my-server-name"),
+				),
+			},
+			{
+				Config: testAccConnectionConfigUpdated,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.client_tls.root_cert", "my-root-cert2"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.client_tls.client_cert", "my-client-cert2"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.client_tls.client_key", "my-client-key2"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.client_tls.server_name", "my-server-name2"),
+				),
+			},
+		},
+	})
+}
+
+func TestAcc_Connection_Postgres_Connection_ConnectionOptions(t *testing.T) {
+	connectionName := acctest.RandString(10)
+
+	testAccConnectionConfig := fmt.Sprintf(`
+resource "neosync_connection" "test1" {
+  name = "%s"
+
+	postgres = {
+		host = "test-url"
+		port = 5432
+		name = "neosync"
+		user = "postgres"
+		pass = "postgres123"
+		ssl_mode = "disable"
+
+		connection_options = {
+			max_idle_connections = 10
+			max_open_connections = 20
+			max_idle_duration = "3600"
+			max_open_duration = "3700"
+		}
+	}
+}
+`, connectionName)
+	testAccConnectionConfigUpdated := fmt.Sprintf(`
+resource "neosync_connection" "test1" {
+  name = "%s"
+
+	postgres = {
+		host = "test-url"
+		port = 5432
+		name = "neosync"
+		user = "postgres"
+		pass = "postgres123"
+		ssl_mode = "disable"
+
+		connection_options = {
+			max_idle_connections = 100
+			max_open_connections = 200
+			max_idle_duration = "36000"
+			max_open_duration = "37000"
+		}
+	}
+}
+`, connectionName)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccConnectionConfig,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("neosync_connection.test1", "id"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "name", connectionName),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.host", "test-url"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.port", "5432"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.name", "neosync"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.user", "postgres"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.pass", "postgres123"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.ssl_mode", "disable"),
+
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.connection_options.max_idle_connections", "10"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.connection_options.max_open_connections", "20"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.connection_options.max_idle_duration", "3600"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.connection_options.max_open_duration", "3700"),
+				),
+			},
+			{
+				Config: testAccConnectionConfigUpdated,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.connection_options.max_idle_connections", "100"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.connection_options.max_open_connections", "200"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.connection_options.max_idle_duration", "36000"),
+					resource.TestCheckResourceAttr("neosync_connection.test1", "postgres.connection_options.max_open_duration", "37000"),
+				),
+			},
+		},
+	})
+}
+
 func TestAcc_Connection_Import(t *testing.T) {
 	connectionName := acctest.RandString(10)
 	testAccConnectionConfig := fmt.Sprintf(`

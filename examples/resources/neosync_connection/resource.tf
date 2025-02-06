@@ -27,6 +27,20 @@ resource "neosync_connection" "local_pg" {
       private_key           = "my-private-key"
       passphrase            = "test"
     }
+
+    connection_options = {
+      max_idle_connections = 10
+      max_open_connections = 20
+      max_idle_duration    = "3600"
+      max_open_duration    = "3700"
+    }
+
+    client_tls = {
+      root_cert   = "my-root-cert"
+      client_cert = "my-client-cert"
+      client_key  = "my-client-key"
+      server_name = "my-server-name"
+    }
   }
 }
 

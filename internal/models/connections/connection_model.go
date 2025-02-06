@@ -47,6 +47,9 @@ type Postgres struct {
 	SslMode types.String `tfsdk:"ssl_mode"`
 
 	Tunnel *SSHTunnel `tfsdk:"tunnel"`
+
+	ClientTls         *ClientTlsConfig      `tfsdk:"client_tls"`
+	ConnectionOptions *SqlConnectionOptions `tfsdk:"connection_options"`
 }
 
 type Mysql struct {
@@ -60,6 +63,9 @@ type Mysql struct {
 	Protocol types.String `tfsdk:"protocol"`
 
 	Tunnel *SSHTunnel `tfsdk:"tunnel"`
+
+	ClientTls         *ClientTlsConfig      `tfsdk:"client_tls"`
+	ConnectionOptions *SqlConnectionOptions `tfsdk:"connection_options"`
 }
 
 type SSHTunnel struct {
@@ -70,6 +76,76 @@ type SSHTunnel struct {
 
 	PrivateKey types.String `tfsdk:"private_key"`
 	Passphrase types.String `tfsdk:"passphrase"`
+}
+
+type SqlConnectionOptions struct {
+	MaxOpenConnections *int32  `tfsdk:"max_open_connections"`
+	MaxIdleConnections *int32  `tfsdk:"max_idle_connections"`
+	MaxIdleDuration    *string `tfsdk:"max_idle_duration"`
+	MaxOpenDuration    *string `tfsdk:"max_open_duration"`
+}
+
+func (c *SqlConnectionOptions) ToDto() (*mgmtv1alpha1.SqlConnectionOptions, error) {
+	if c == nil {
+		return nil, errors.New("sql connection options is nil")
+	}
+
+	return &mgmtv1alpha1.SqlConnectionOptions{
+		MaxConnectionLimit: c.MaxOpenConnections,
+		MaxIdleConnections: c.MaxIdleConnections,
+		MaxIdleDuration:    c.MaxIdleDuration,
+		MaxOpenDuration:    c.MaxOpenDuration,
+	}, nil
+}
+
+func (c *SqlConnectionOptions) FromDto(dto *mgmtv1alpha1.SqlConnectionOptions) error {
+	if c == nil {
+		return errors.New("sql connection options is nil")
+	}
+
+	if dto == nil {
+		return errors.New("sql connection options dto is nil")
+	}
+
+	c.MaxOpenConnections = dto.MaxConnectionLimit
+	c.MaxIdleConnections = dto.MaxIdleConnections
+	c.MaxIdleDuration = dto.MaxIdleDuration
+	c.MaxOpenDuration = dto.MaxOpenDuration
+
+	return nil
+}
+
+type ClientTlsConfig struct {
+	RootCert   *string `tfsdk:"root_cert"`
+	ClientCert *string `tfsdk:"client_cert"`
+	ClientKey  *string `tfsdk:"client_key"`
+	ServerName *string `tfsdk:"server_name"`
+}
+
+func (c *ClientTlsConfig) ToDto() (*mgmtv1alpha1.ClientTlsConfig, error) {
+	if c == nil {
+		return nil, errors.New("client tls config is nil")
+	}
+
+	return &mgmtv1alpha1.ClientTlsConfig{
+		RootCert:   c.RootCert,
+		ClientCert: c.ClientCert,
+		ClientKey:  c.ClientKey,
+		ServerName: c.ServerName,
+	}, nil
+}
+
+func (c *ClientTlsConfig) FromDto(dto *mgmtv1alpha1.ClientTlsConfig) error {
+	if c == nil {
+		return errors.New("client tls config is nil")
+	}
+
+	c.RootCert = dto.RootCert
+	c.ClientCert = dto.ClientCert
+	c.ClientKey = dto.ClientKey
+	c.ServerName = dto.ServerName
+
+	return nil
 }
 
 func (c *ConnectionResourceModel) ToCreateConnectionDto() (*mgmtv1alpha1.CreateConnectionRequest, error) {
@@ -136,30 +212,27 @@ func (c *ConnectionResourceModel) ToConnectionConfigDto() (*mgmtv1alpha1.Connect
 	if c.Postgres != nil {
 		var tunnel *mgmtv1alpha1.SSHTunnel
 		if c.Postgres.Tunnel != nil {
-			tunnel = &mgmtv1alpha1.SSHTunnel{
-				Host:               c.Postgres.Tunnel.Host.ValueString(),
-				Port:               int32(c.Postgres.Tunnel.Port.ValueInt64()),
-				User:               c.Postgres.Tunnel.User.ValueString(),
-				KnownHostPublicKey: c.Postgres.Tunnel.KnownHostPublicKey.ValueStringPointer(),
+			tunnelDto, err := c.Postgres.Tunnel.ToDto()
+			if err != nil {
+				return nil, err
 			}
-			if c.Postgres.Tunnel.PrivateKey.ValueString() != "" {
-				tunnel.Authentication = &mgmtv1alpha1.SSHAuthentication{
-					AuthConfig: &mgmtv1alpha1.SSHAuthentication_PrivateKey{
-						PrivateKey: &mgmtv1alpha1.SSHPrivateKey{
-							Value:      c.Postgres.Tunnel.PrivateKey.ValueString(),
-							Passphrase: c.Postgres.Tunnel.Passphrase.ValueStringPointer(),
-						},
-					},
-				}
-			} else if c.Postgres.Tunnel.Passphrase.ValueString() != "" {
-				tunnel.Authentication = &mgmtv1alpha1.SSHAuthentication{
-					AuthConfig: &mgmtv1alpha1.SSHAuthentication_Passphrase{
-						Passphrase: &mgmtv1alpha1.SSHPassphrase{
-							Value: c.Postgres.Tunnel.Passphrase.ValueString(),
-						},
-					},
-				}
+			tunnel = tunnelDto
+		}
+		var clientTls *mgmtv1alpha1.ClientTlsConfig
+		if c.Postgres.ClientTls != nil {
+			clientTlsDto, err := c.Postgres.ClientTls.ToDto()
+			if err != nil {
+				return nil, err
 			}
+			clientTls = clientTlsDto
+		}
+		var connectionOptions *mgmtv1alpha1.SqlConnectionOptions
+		if c.Postgres.ConnectionOptions != nil {
+			connectionOptionsDto, err := c.Postgres.ConnectionOptions.ToDto()
+			if err != nil {
+				return nil, err
+			}
+			connectionOptions = connectionOptionsDto
 		}
 		if c.Postgres.Url.ValueString() != "" {
 			return &mgmtv1alpha1.ConnectionConfig{
@@ -168,7 +241,9 @@ func (c *ConnectionResourceModel) ToConnectionConfigDto() (*mgmtv1alpha1.Connect
 						ConnectionConfig: &mgmtv1alpha1.PostgresConnectionConfig_Url{
 							Url: c.Postgres.Url.ValueString(),
 						},
-						Tunnel: tunnel,
+						Tunnel:            tunnel,
+						ConnectionOptions: connectionOptions,
+						ClientTls:         clientTls,
 					},
 				},
 			}, nil
@@ -190,7 +265,9 @@ func (c *ConnectionResourceModel) ToConnectionConfigDto() (*mgmtv1alpha1.Connect
 								SslMode: pg.SslMode.ValueStringPointer(),
 							},
 						},
-						Tunnel: tunnel,
+						Tunnel:            tunnel,
+						ConnectionOptions: connectionOptions,
+						ClientTls:         clientTls,
 					},
 				},
 			}, nil
@@ -199,30 +276,27 @@ func (c *ConnectionResourceModel) ToConnectionConfigDto() (*mgmtv1alpha1.Connect
 	if c.Mysql != nil {
 		var tunnel *mgmtv1alpha1.SSHTunnel
 		if c.Mysql.Tunnel != nil {
-			tunnel = &mgmtv1alpha1.SSHTunnel{
-				Host:               c.Mysql.Tunnel.Host.ValueString(),
-				Port:               int32(c.Mysql.Tunnel.Port.ValueInt64()),
-				User:               c.Mysql.Tunnel.User.ValueString(),
-				KnownHostPublicKey: c.Mysql.Tunnel.KnownHostPublicKey.ValueStringPointer(),
+			tunnelDto, err := c.Mysql.Tunnel.ToDto()
+			if err != nil {
+				return nil, err
 			}
-			if c.Mysql.Tunnel.PrivateKey.ValueString() != "" {
-				tunnel.Authentication = &mgmtv1alpha1.SSHAuthentication{
-					AuthConfig: &mgmtv1alpha1.SSHAuthentication_PrivateKey{
-						PrivateKey: &mgmtv1alpha1.SSHPrivateKey{
-							Value:      c.Mysql.Tunnel.PrivateKey.ValueString(),
-							Passphrase: c.Mysql.Tunnel.Passphrase.ValueStringPointer(),
-						},
-					},
-				}
-			} else if c.Mysql.Tunnel.Passphrase.ValueString() != "" {
-				tunnel.Authentication = &mgmtv1alpha1.SSHAuthentication{
-					AuthConfig: &mgmtv1alpha1.SSHAuthentication_Passphrase{
-						Passphrase: &mgmtv1alpha1.SSHPassphrase{
-							Value: c.Mysql.Tunnel.Passphrase.ValueString(),
-						},
-					},
-				}
+			tunnel = tunnelDto
+		}
+		var clientTls *mgmtv1alpha1.ClientTlsConfig
+		if c.Mysql.ClientTls != nil {
+			clientTlsDto, err := c.Mysql.ClientTls.ToDto()
+			if err != nil {
+				return nil, err
 			}
+			clientTls = clientTlsDto
+		}
+		var connectionOptions *mgmtv1alpha1.SqlConnectionOptions
+		if c.Mysql.ConnectionOptions != nil {
+			connectionOptionsDto, err := c.Mysql.ConnectionOptions.ToDto()
+			if err != nil {
+				return nil, err
+			}
+			connectionOptions = connectionOptionsDto
 		}
 		if c.Mysql.Url.ValueString() != "" {
 			return &mgmtv1alpha1.ConnectionConfig{
@@ -231,7 +305,9 @@ func (c *ConnectionResourceModel) ToConnectionConfigDto() (*mgmtv1alpha1.Connect
 						ConnectionConfig: &mgmtv1alpha1.MysqlConnectionConfig_Url{
 							Url: c.Mysql.Url.ValueString(),
 						},
-						Tunnel: tunnel,
+						Tunnel:            tunnel,
+						ConnectionOptions: connectionOptions,
+						ClientTls:         clientTls,
 					},
 				},
 			}, nil
@@ -253,7 +329,9 @@ func (c *ConnectionResourceModel) ToConnectionConfigDto() (*mgmtv1alpha1.Connect
 								Protocol: mysql.Protocol.ValueString(),
 							},
 						},
-						Tunnel: tunnel,
+						Tunnel:            tunnel,
+						ConnectionOptions: connectionOptions,
+						ClientTls:         clientTls,
 					},
 				},
 			}, nil
@@ -308,7 +386,18 @@ func (c *ConnectionResourceModel) FromConnectionConfigDto(dto *mgmtv1alpha1.Conn
 					return err
 				}
 			}
-
+			if config.PgConfig.ConnectionOptions != nil {
+				c.Postgres.ConnectionOptions = &SqlConnectionOptions{}
+				if err := c.Postgres.ConnectionOptions.FromDto(config.PgConfig.ConnectionOptions); err != nil {
+					return err
+				}
+			}
+			if config.PgConfig.ClientTls != nil {
+				c.Postgres.ClientTls = &ClientTlsConfig{}
+				if err := c.Postgres.ClientTls.FromDto(config.PgConfig.ClientTls); err != nil {
+					return err
+				}
+			}
 			return nil
 		case *mgmtv1alpha1.PostgresConnectionConfig_Url:
 			c.Postgres = &Postgres{
@@ -318,6 +407,18 @@ func (c *ConnectionResourceModel) FromConnectionConfigDto(dto *mgmtv1alpha1.Conn
 			if config.PgConfig.Tunnel != nil {
 				c.Postgres.Tunnel = &SSHTunnel{}
 				if err := c.Postgres.Tunnel.FromDto(config.PgConfig.Tunnel); err != nil {
+					return err
+				}
+			}
+			if config.PgConfig.ConnectionOptions != nil {
+				c.Postgres.ConnectionOptions = &SqlConnectionOptions{}
+				if err := c.Postgres.ConnectionOptions.FromDto(config.PgConfig.ConnectionOptions); err != nil {
+					return err
+				}
+			}
+			if config.PgConfig.ClientTls != nil {
+				c.Postgres.ClientTls = &ClientTlsConfig{}
+				if err := c.Postgres.ClientTls.FromDto(config.PgConfig.ClientTls); err != nil {
 					return err
 				}
 			}
@@ -343,6 +444,18 @@ func (c *ConnectionResourceModel) FromConnectionConfigDto(dto *mgmtv1alpha1.Conn
 					return err
 				}
 			}
+			if config.MysqlConfig.ConnectionOptions != nil {
+				c.Mysql.ConnectionOptions = &SqlConnectionOptions{}
+				if err := c.Mysql.ConnectionOptions.FromDto(config.MysqlConfig.ConnectionOptions); err != nil {
+					return err
+				}
+			}
+			if config.MysqlConfig.ClientTls != nil {
+				c.Mysql.ClientTls = &ClientTlsConfig{}
+				if err := c.Mysql.ClientTls.FromDto(config.MysqlConfig.ClientTls); err != nil {
+					return err
+				}
+			}
 			return nil
 		case *mgmtv1alpha1.MysqlConnectionConfig_Url:
 			c.Mysql = &Mysql{
@@ -352,6 +465,18 @@ func (c *ConnectionResourceModel) FromConnectionConfigDto(dto *mgmtv1alpha1.Conn
 			if config.MysqlConfig.Tunnel != nil {
 				c.Mysql.Tunnel = &SSHTunnel{}
 				if err := c.Mysql.Tunnel.FromDto(config.MysqlConfig.Tunnel); err != nil {
+					return err
+				}
+			}
+			if config.MysqlConfig.ConnectionOptions != nil {
+				c.Mysql.ConnectionOptions = &SqlConnectionOptions{}
+				if err := c.Mysql.ConnectionOptions.FromDto(config.MysqlConfig.ConnectionOptions); err != nil {
+					return err
+				}
+			}
+			if config.MysqlConfig.ClientTls != nil {
+				c.Mysql.ClientTls = &ClientTlsConfig{}
+				if err := c.Mysql.ClientTls.FromDto(config.MysqlConfig.ClientTls); err != nil {
 					return err
 				}
 			}
@@ -407,6 +532,40 @@ func (s *SSHTunnel) FromDto(dto *mgmtv1alpha1.SSHTunnel) error {
 	}
 
 	return nil
+}
+
+func (s *SSHTunnel) ToDto() (*mgmtv1alpha1.SSHTunnel, error) {
+	if s == nil {
+		return nil, errors.New("ssh tunnel is nil")
+	}
+
+	var auth *mgmtv1alpha1.SSHAuthentication
+	if s.PrivateKey.ValueString() != "" {
+		auth = &mgmtv1alpha1.SSHAuthentication{
+			AuthConfig: &mgmtv1alpha1.SSHAuthentication_PrivateKey{
+				PrivateKey: &mgmtv1alpha1.SSHPrivateKey{
+					Value:      s.PrivateKey.ValueString(),
+					Passphrase: s.Passphrase.ValueStringPointer(),
+				},
+			},
+		}
+	} else if s.Passphrase.ValueString() != "" {
+		auth = &mgmtv1alpha1.SSHAuthentication{
+			AuthConfig: &mgmtv1alpha1.SSHAuthentication_Passphrase{
+				Passphrase: &mgmtv1alpha1.SSHPassphrase{
+					Value: s.Passphrase.ValueString(),
+				},
+			},
+		}
+	}
+
+	return &mgmtv1alpha1.SSHTunnel{
+		Host:               s.Host.ValueString(),
+		Port:               int32(s.Port.ValueInt64()),
+		User:               s.User.ValueString(),
+		KnownHostPublicKey: s.KnownHostPublicKey.ValueStringPointer(),
+		Authentication:     auth,
+	}, nil
 }
 
 func isAwsCredentialsEmpty(creds *mgmtv1alpha1.AwsS3Credentials) bool {

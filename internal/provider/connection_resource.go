@@ -66,6 +66,53 @@ var (
 			},
 		},
 	}
+
+	clientTlsSchema = schema.SingleNestedAttribute{
+		Description: "TLS configuration for the connection",
+		Optional:    true,
+		Attributes: map[string]schema.Attribute{
+			"root_cert": schema.StringAttribute{
+				Description: "The root certificate in PEM format",
+				Optional:    true,
+			},
+			"client_cert": schema.StringAttribute{
+				Description: "The client certificate in PEM format",
+				Optional:    true,
+			},
+			"client_key": schema.StringAttribute{
+				Description: "The client key in PEM format",
+				Optional:    true,
+				Sensitive:   true,
+			},
+			"server_name": schema.StringAttribute{
+				Description: "The expected server name",
+				Optional:    true,
+			},
+		},
+	}
+
+	sqlConnectionOptionsSchema = schema.SingleNestedAttribute{
+		Description: "SQL connection options",
+		Optional:    true,
+		Attributes: map[string]schema.Attribute{
+			"max_idle_connections": schema.Int32Attribute{
+				Description: "The maximum number of idle connections to the database",
+				Optional:    true,
+			},
+			"max_open_connections": schema.Int32Attribute{
+				Description: "The maximum number of open connections to the database",
+				Optional:    true,
+			},
+			"max_idle_duration": schema.StringAttribute{
+				Description: "The maximum amount of time a connection may be reused",
+				Optional:    true,
+			},
+			"max_open_duration": schema.StringAttribute{
+				Description: "The maximum amount of time a connection may be idle",
+				Optional:    true,
+			},
+		},
+	}
 )
 
 func (r *ConnectionResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -120,7 +167,9 @@ func (r *ConnectionResource) Schema(ctx context.Context, req resource.SchemaRequ
 						Description: "The SSL mode for the postgres server",
 						Optional:    true,
 					},
-					"tunnel": tunnelSchema,
+					"tunnel":             tunnelSchema,
+					"client_tls":         clientTlsSchema,
+					"connection_options": sqlConnectionOptionsSchema,
 				},
 			},
 			"mysql": schema.SingleNestedAttribute{
@@ -158,7 +207,9 @@ func (r *ConnectionResource) Schema(ctx context.Context, req resource.SchemaRequ
 						Description: "The protocol of the mysql server",
 						Optional:    true,
 					},
-					"tunnel": tunnelSchema,
+					"tunnel":             tunnelSchema,
+					"client_tls":         clientTlsSchema,
+					"connection_options": sqlConnectionOptionsSchema,
 				},
 			},
 			"aws_s3": schema.SingleNestedAttribute{
@@ -289,7 +340,6 @@ func (r *ConnectionResource) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 	tflog.Trace(ctx, "mapped connection to model during creation")
-
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newModel)...)
 }
 
