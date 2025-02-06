@@ -302,8 +302,10 @@ func (c *ConnectionResourceModel) FromConnectionConfigDto(dto *mgmtv1alpha1.Conn
 				SslMode: types.StringPointerValue(pgcc.Connection.SslMode),
 				Tunnel:  &SSHTunnel{},
 			}
-			if err := c.Postgres.Tunnel.FromDto(config.PgConfig.Tunnel); err != nil {
-				return err
+			if config.PgConfig.Tunnel != nil {
+				if err := c.Postgres.Tunnel.FromDto(config.PgConfig.Tunnel); err != nil {
+					return err
+				}
 			}
 
 			return nil
@@ -312,8 +314,10 @@ func (c *ConnectionResourceModel) FromConnectionConfigDto(dto *mgmtv1alpha1.Conn
 				Url:    types.StringValue(pgcc.Url),
 				Tunnel: &SSHTunnel{},
 			}
-			if err := c.Postgres.Tunnel.FromDto(config.PgConfig.Tunnel); err != nil {
-				return err
+			if config.PgConfig.Tunnel != nil {
+				if err := c.Postgres.Tunnel.FromDto(config.PgConfig.Tunnel); err != nil {
+					return err
+				}
 			}
 			return nil
 		default:
@@ -331,8 +335,10 @@ func (c *ConnectionResourceModel) FromConnectionConfigDto(dto *mgmtv1alpha1.Conn
 				Protocol: types.StringValue(mycc.Connection.Protocol),
 				Tunnel:   &SSHTunnel{},
 			}
-			if err := c.Mysql.Tunnel.FromDto(config.MysqlConfig.Tunnel); err != nil {
-				return err
+			if config.MysqlConfig.Tunnel != nil {
+				if err := c.Mysql.Tunnel.FromDto(config.MysqlConfig.Tunnel); err != nil {
+					return err
+				}
 			}
 			return nil
 		case *mgmtv1alpha1.MysqlConnectionConfig_Url:
@@ -340,8 +346,10 @@ func (c *ConnectionResourceModel) FromConnectionConfigDto(dto *mgmtv1alpha1.Conn
 				Url:    types.StringValue(mycc.Url),
 				Tunnel: &SSHTunnel{},
 			}
-			if err := c.Mysql.Tunnel.FromDto(config.MysqlConfig.Tunnel); err != nil {
-				return err
+			if config.MysqlConfig.Tunnel != nil {
+				if err := c.Mysql.Tunnel.FromDto(config.MysqlConfig.Tunnel); err != nil {
+					return err
+				}
 			}
 			return nil
 		default:
