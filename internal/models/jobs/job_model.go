@@ -10,15 +10,29 @@ import (
 )
 
 type JobResourceModel struct {
-	Id              types.String      `tfsdk:"id"`
-	Name            types.String      `tfsdk:"name"`
-	AccountId       types.String      `tfsdk:"account_id"`
-	JobSource       *JobSource        `tfsdk:"source"`
-	Destinations    []*JobDestination `tfsdk:"destinations"`
-	Mappings        []*JobMapping     `tfsdk:"mappings"`
-	CronSchedule    types.String      `tfsdk:"cron_schedule"`
-	SyncOptions     *ActivityOptions  `tfsdk:"sync_options"`
-	WorkflowOptions *WorkflowOptions  `tfsdk:"workflow_options"`
+	Id                 types.String                   `tfsdk:"id"`
+	Name               types.String                   `tfsdk:"name"`
+	AccountId          types.String                   `tfsdk:"account_id"`
+	JobSource          *JobSource                     `tfsdk:"source"`
+	Destinations       []*JobDestination              `tfsdk:"destinations"`
+	Mappings           []*JobMapping                  `tfsdk:"mappings"`
+	CronSchedule       types.String                   `tfsdk:"cron_schedule"`
+	SyncOptions        *ActivityOptions               `tfsdk:"sync_options"`
+	WorkflowOptions    *WorkflowOptions               `tfsdk:"workflow_options"`
+	VirtualForeignKeys []*VirtualForeignKeyConstraint `tfsdk:"virtual_foreign_keys"`
+}
+
+type VirtualForeignKeyConstraint struct {
+	Schema     types.String       `tfsdk:"schema"`
+	Table      types.String       `tfsdk:"table"`
+	Columns    []types.String     `tfsdk:"columns"`
+	ForeignKey *VirtualForeignKey `tfsdk:"foreign_key"`
+}
+
+type VirtualForeignKey struct {
+	Schema  types.String   `tfsdk:"schema"`
+	Table   types.String   `tfsdk:"table"`
+	Columns []types.String `tfsdk:"columns"`
 }
 
 type JobSource struct {
@@ -371,7 +385,126 @@ func (j *JobResourceModel) FromDto(dto *mgmtv1alpha1.Job) error {
 		}
 		j.WorkflowOptions = workflowOpts
 	}
+
 	// dto.VirtualForeignKeys // todo
+	// implement this and the dtos
+	if len(dto.GetVirtualForeignKeys()) > 0 {
+		vkeys := make([]*VirtualForeignKeyConstraint, 0, len(dto.GetVirtualForeignKeys()))
+		for _, dtoVfkey := range dto.GetVirtualForeignKeys() {
+			vfk := &VirtualForeignKeyConstraint{}
+			err := vfk.FromDto(dtoVfkey)
+			if err != nil {
+				return err
+			}
+			vkeys = append(vkeys, vfk)
+		}
+		j.VirtualForeignKeys = vkeys
+	}
+
+	return nil
+}
+func (v *VirtualForeignKeyConstraint) ToDto() (*mgmtv1alpha1.VirtualForeignConstraint, error) {
+	if v == nil {
+		return nil, errors.New("virtual foreign key constraint is nil")
+	}
+
+	var columns []string
+	if len(v.Columns) > 0 {
+		columns = make([]string, 0, len(v.Columns))
+		for _, column := range v.Columns {
+			columns = append(columns, column.ValueString())
+		}
+	}
+
+	var foreignKey *mgmtv1alpha1.VirtualForeignKey
+	if v.ForeignKey != nil {
+		foreignKeyDto, err := v.ForeignKey.ToDto()
+		if err != nil {
+			return nil, err
+		}
+		foreignKey = foreignKeyDto
+	}
+
+	return &mgmtv1alpha1.VirtualForeignConstraint{
+		Schema:     v.Schema.ValueString(),
+		Table:      v.Table.ValueString(),
+		Columns:    columns,
+		ForeignKey: foreignKey,
+	}, nil
+}
+
+func (v *VirtualForeignKeyConstraint) FromDto(dto *mgmtv1alpha1.VirtualForeignConstraint) error {
+	if v == nil {
+		return errors.New("virtual foreign key constraint is nil")
+	}
+	if dto == nil {
+		return errors.New("virtual foreign key constraint dto is nil")
+	}
+
+	v.Schema = types.StringValue(dto.Schema)
+	v.Table = types.StringValue(dto.Table)
+
+	var columns []types.String
+	if len(dto.Columns) > 0 {
+		columns = make([]types.String, 0, len(dto.Columns))
+		for _, column := range dto.Columns {
+			columns = append(columns, types.StringValue(column))
+		}
+	}
+	v.Columns = columns
+
+	var foreignKey *VirtualForeignKey
+	if dto.ForeignKey != nil {
+		foreignKey = &VirtualForeignKey{}
+		err := foreignKey.FromDto(dto.ForeignKey)
+		if err != nil {
+			return err
+		}
+	}
+
+	v.ForeignKey = foreignKey
+	return nil
+}
+
+func (v *VirtualForeignKey) ToDto() (*mgmtv1alpha1.VirtualForeignKey, error) {
+	if v == nil {
+		return nil, errors.New("virtual foreign key is nil")
+	}
+
+	var columns []string
+	if len(v.Columns) > 0 {
+		columns = make([]string, 0, len(v.Columns))
+		for _, column := range v.Columns {
+			columns = append(columns, column.ValueString())
+		}
+	}
+
+	return &mgmtv1alpha1.VirtualForeignKey{
+		Schema:  v.Schema.ValueString(),
+		Table:   v.Table.ValueString(),
+		Columns: columns,
+	}, nil
+}
+
+func (v *VirtualForeignKey) FromDto(dto *mgmtv1alpha1.VirtualForeignKey) error {
+	if v == nil {
+		return errors.New("virtual foreign key is nil")
+	}
+	if dto == nil {
+		return errors.New("virtual foreign key dto is nil")
+	}
+
+	v.Schema = types.StringValue(dto.Schema)
+	v.Table = types.StringValue(dto.Table)
+
+	var columns []types.String
+	if len(dto.Columns) > 0 {
+		columns = make([]types.String, 0, len(dto.Columns))
+		for _, column := range dto.Columns {
+			columns = append(columns, types.StringValue(column))
+		}
+	}
+	v.Columns = columns
 
 	return nil
 }

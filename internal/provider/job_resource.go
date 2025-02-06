@@ -375,6 +375,47 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 				},
 			},
 
+			"virtual_foreign_keys": schema.ListNestedAttribute{
+				Description: "A list of virtual foreign keys that will be used to further constrain the source tables",
+				Optional:    true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"schema": schema.StringAttribute{
+							Description: "The database schema",
+							Required:    true,
+						},
+						"table": schema.StringAttribute{
+							Description: "The database table",
+							Required:    true,
+						},
+						"columns": schema.ListAttribute{
+							Description: "The columns that will be used to constrain the source table",
+							Required:    true,
+							ElementType: types.StringType,
+						},
+						"foreign_key": schema.SingleNestedAttribute{
+							Description: "The foreign key that will be used to constrain the source table",
+							Required:    true,
+							Attributes: map[string]schema.Attribute{
+								"schema": schema.StringAttribute{
+									Description: "The database schema",
+									Required:    true,
+								},
+								"table": schema.StringAttribute{
+									Description: "The database table",
+									Required:    true,
+								},
+								"columns": schema.ListAttribute{
+									Description: "The columns that will be used to constrain the source table",
+									Required:    true,
+									ElementType: types.StringType,
+								},
+							},
+						},
+					},
+				},
+			},
+
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "The unique identifier of the connection",
