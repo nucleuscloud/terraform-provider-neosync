@@ -29,11 +29,10 @@ type JobSource struct {
 	// mssql, ai generate
 }
 type JobSourcePostgresOptions struct {
-	HaltOnNewColumnAddition       types.Bool                             `tfsdk:"halt_on_new_column_addition"`
 	NewColumnAdditionStrategy     *PostgresNewColumnAdditionStrategy     `tfsdk:"new_column_addition_strategy"`
-	ColumnRemovalStrategy         *PostgresColumnRemovalStrategy         `tfsdk:"column_removal_strategy"` // add to schema!!
+	ColumnRemovalStrategy         *PostgresColumnRemovalStrategy         `tfsdk:"column_removal_strategy"`
 	ConnectionId                  types.String                           `tfsdk:"connection_id"`
-	SubsetByForeignKeyConstraints types.Bool                             `tfsdk:"subset_by_foreign_key_constraints"` // add to schema!!
+	SubsetByForeignKeyConstraints types.Bool                             `tfsdk:"subset_by_foreign_key_constraints"`
 	SchemaOptions                 []*JobSourcePostgresSourceSchemaOption `tfsdk:"schemas"`
 }
 
@@ -62,10 +61,9 @@ type JobSourcePostgresSourceTableOption struct {
 }
 
 type JobSourceMysqlOptions struct {
-	HaltOnNewColumnAddition       types.Bool                          `tfsdk:"halt_on_new_column_addition"`
 	ConnectionId                  types.String                        `tfsdk:"connection_id"`
 	SchemaOptions                 []*JobSourceMysqlSourceSchemaOption `tfsdk:"schemas"`
-	SubsetByForeignKeyConstraints types.Bool                          `tfsdk:"subset_by_foreign_key_constraints"` // add to schema!!
+	SubsetByForeignKeyConstraints types.Bool                          `tfsdk:"subset_by_foreign_key_constraints"`
 	ColumnRemovalStrategy         *MssqlColumnRemovalStrategy         `tfsdk:"column_removal_strategy"`
 }
 type MssqlColumnRemovalStrategy struct {
@@ -175,13 +173,16 @@ func (j *JobResourceModel) ToCreateJobDto() (*mgmtv1alpha1.CreateJobRequest, err
 		}
 	}
 
-	destinations := make([]*mgmtv1alpha1.CreateJobDestination, 0, len(j.Destinations))
-	for _, destination := range j.Destinations {
-		destinationDto, err := destination.ToCreateJobDestinationDto()
-		if err != nil {
-			return nil, err
+	var destinations []*mgmtv1alpha1.CreateJobDestination
+	if len(j.Destinations) > 0 {
+		destinations = make([]*mgmtv1alpha1.CreateJobDestination, 0, len(j.Destinations))
+		for _, destination := range j.Destinations {
+			destinationDto, err := destination.ToCreateJobDestinationDto()
+			if err != nil {
+				return nil, err
+			}
+			destinations = append(destinations, destinationDto)
 		}
-		destinations = append(destinations, destinationDto)
 	}
 
 	return &mgmtv1alpha1.CreateJobRequest{
@@ -353,7 +354,7 @@ func (j *JobResourceModel) FromDto(dto *mgmtv1alpha1.Job) error {
 		j.Destinations = destinations
 	}
 
-	if dto.SyncOptions != nil {
+	if dto.SyncOptions != nil && (dto.SyncOptions.ScheduleToCloseTimeout != nil || dto.SyncOptions.StartToCloseTimeout != nil || dto.SyncOptions.RetryPolicy != nil) {
 		syncOpts := &ActivityOptions{}
 		err := syncOpts.FromDto(dto.SyncOptions)
 		if err != nil {
@@ -362,7 +363,7 @@ func (j *JobResourceModel) FromDto(dto *mgmtv1alpha1.Job) error {
 		j.SyncOptions = syncOpts
 	}
 
-	if dto.WorkflowOptions != nil {
+	if dto.WorkflowOptions != nil && (dto.WorkflowOptions.RunTimeout != nil) {
 		workflowOpts := &WorkflowOptions{}
 		err := workflowOpts.FromDto(dto.WorkflowOptions)
 		if err != nil {
@@ -851,14 +852,16 @@ func (j *JobSourcePostgresOptions) FromDto(dto *mgmtv1alpha1.PostgresSourceConne
 
 	j.ConnectionId = types.StringValue(dto.ConnectionId)
 	j.SubsetByForeignKeyConstraints = types.BoolValue(dto.SubsetByForeignKeyConstraints)
-	j.SchemaOptions = make([]*JobSourcePostgresSourceSchemaOption, 0, len(dto.Schemas))
-	for _, schemaDto := range dto.Schemas {
-		schema := &JobSourcePostgresSourceSchemaOption{}
-		err := schema.FromDto(schemaDto)
-		if err != nil {
-			return err
+	if len(dto.Schemas) > 0 {
+		j.SchemaOptions = make([]*JobSourcePostgresSourceSchemaOption, 0, len(dto.Schemas))
+		for _, schemaDto := range dto.Schemas {
+			schema := &JobSourcePostgresSourceSchemaOption{}
+			err := schema.FromDto(schemaDto)
+			if err != nil {
+				return err
+			}
+			j.SchemaOptions = append(j.SchemaOptions, schema)
 		}
-		j.SchemaOptions = append(j.SchemaOptions, schema)
 	}
 	j.SubsetByForeignKeyConstraints = types.BoolValue(dto.SubsetByForeignKeyConstraints)
 
@@ -1139,13 +1142,16 @@ func (j *JobSourceGenerateOptions) ToDto() (*mgmtv1alpha1.JobSourceOptions_Gener
 		return nil, errors.New("job source generate options is nil")
 	}
 
-	schemas := make([]*mgmtv1alpha1.GenerateSourceSchemaOption, 0, len(j.Schemas))
-	for _, schema := range j.Schemas {
-		schemaDto, err := schema.ToDto()
-		if err != nil {
-			return nil, err
+	var schemas []*mgmtv1alpha1.GenerateSourceSchemaOption
+	if len(j.Schemas) > 0 {
+		schemas = make([]*mgmtv1alpha1.GenerateSourceSchemaOption, 0, len(j.Schemas))
+		for _, schema := range j.Schemas {
+			schemaDto, err := schema.ToDto()
+			if err != nil {
+				return nil, err
+			}
+			schemas = append(schemas, schemaDto)
 		}
-		schemas = append(schemas, schemaDto)
 	}
 
 	return &mgmtv1alpha1.JobSourceOptions_Generate{
@@ -1164,14 +1170,18 @@ func (j *JobSourceGenerateOptions) FromDto(dto *mgmtv1alpha1.GenerateSourceOptio
 		return errors.New("job source generate options dto is nil")
 	}
 
-	j.Schemas = make([]*JobSourceGenerateSchemaOption, 0, len(dto.Schemas))
-	for _, schemaDto := range dto.Schemas {
-		schema := &JobSourceGenerateSchemaOption{}
-		err := schema.FromDto(schemaDto)
-		if err != nil {
-			return err
+	j.FkSourceConnectionId = types.StringPointerValue(dto.FkSourceConnectionId)
+
+	if len(dto.Schemas) > 0 {
+		j.Schemas = make([]*JobSourceGenerateSchemaOption, 0, len(dto.Schemas))
+		for _, schemaDto := range dto.Schemas {
+			schema := &JobSourceGenerateSchemaOption{}
+			err := schema.FromDto(schemaDto)
+			if err != nil {
+				return err
+			}
+			j.Schemas = append(j.Schemas, schema)
 		}
-		j.Schemas = append(j.Schemas, schema)
 	}
 
 	return nil
@@ -1182,13 +1192,16 @@ func (j *JobSourceGenerateSchemaOption) ToDto() (*mgmtv1alpha1.GenerateSourceSch
 		return nil, errors.New("job source generate schema option is nil")
 	}
 
-	tables := make([]*mgmtv1alpha1.GenerateSourceTableOption, 0, len(j.Tables))
-	for _, table := range j.Tables {
-		tableDto, err := table.ToDto()
-		if err != nil {
-			return nil, err
+	var tables []*mgmtv1alpha1.GenerateSourceTableOption
+	if len(j.Tables) > 0 {
+		tables = make([]*mgmtv1alpha1.GenerateSourceTableOption, 0, len(j.Tables))
+		for _, table := range j.Tables {
+			tableDto, err := table.ToDto()
+			if err != nil {
+				return nil, err
+			}
+			tables = append(tables, tableDto)
 		}
-		tables = append(tables, tableDto)
 	}
 
 	return &mgmtv1alpha1.GenerateSourceSchemaOption{
@@ -1206,16 +1219,17 @@ func (j *JobSourceGenerateSchemaOption) FromDto(dto *mgmtv1alpha1.GenerateSource
 	}
 
 	j.Schema = types.StringValue(dto.Schema)
-	j.Tables = make([]*JobSourceGenerateTableOption, 0, len(dto.Tables))
-	for _, dtoTable := range dto.Tables {
-		table := &JobSourceGenerateTableOption{}
-		err := table.FromDto(dtoTable)
-		if err != nil {
-			return err
+	if len(dto.Tables) > 0 {
+		j.Tables = make([]*JobSourceGenerateTableOption, 0, len(dto.Tables))
+		for _, dtoTable := range dto.Tables {
+			table := &JobSourceGenerateTableOption{}
+			err := table.FromDto(dtoTable)
+			if err != nil {
+				return err
+			}
+			j.Tables = append(j.Tables, table)
 		}
-		j.Tables = append(j.Tables, table)
 	}
-
 	return nil
 }
 
@@ -1274,19 +1288,21 @@ func (j *JobSourceMysqlOptions) ToDto() (*mgmtv1alpha1.JobSourceOptions_Mysql, e
 		return nil, errors.New("job source mysql options is nil")
 	}
 
-	schemas := make([]*mgmtv1alpha1.MysqlSourceSchemaOption, 0, len(j.SchemaOptions))
-	for _, schema := range j.SchemaOptions {
-		schemaDto, err := schema.ToDto()
-		if err != nil {
-			return nil, err
+	var schemas []*mgmtv1alpha1.MysqlSourceSchemaOption
+	if len(j.SchemaOptions) > 0 {
+		schemas = make([]*mgmtv1alpha1.MysqlSourceSchemaOption, 0, len(j.SchemaOptions))
+		for _, schema := range j.SchemaOptions {
+			schemaDto, err := schema.ToDto()
+			if err != nil {
+				return nil, err
+			}
+			schemas = append(schemas, schemaDto)
 		}
-		schemas = append(schemas, schemaDto)
 	}
 
 	dto := &mgmtv1alpha1.JobSourceOptions_Mysql{
 		Mysql: &mgmtv1alpha1.MysqlSourceConnectionOptions{
 			ConnectionId:                  j.ConnectionId.ValueString(),
-			HaltOnNewColumnAddition:       j.HaltOnNewColumnAddition.ValueBool(),
 			Schemas:                       schemas,
 			SubsetByForeignKeyConstraints: j.SubsetByForeignKeyConstraints.ValueBool(),
 			ColumnRemovalStrategy:         nil, // set below
@@ -1313,15 +1329,16 @@ func (j *JobSourceMysqlOptions) FromDto(dto *mgmtv1alpha1.MysqlSourceConnectionO
 	}
 
 	j.ConnectionId = types.StringValue(dto.ConnectionId)
-	j.HaltOnNewColumnAddition = types.BoolValue(dto.HaltOnNewColumnAddition)
-	j.SchemaOptions = make([]*JobSourceMysqlSourceSchemaOption, 0, len(dto.Schemas))
-	for _, schemaDto := range dto.Schemas {
-		schema := &JobSourceMysqlSourceSchemaOption{}
-		err := schema.FromDto(schemaDto)
-		if err != nil {
-			return err
+	if len(dto.Schemas) > 0 {
+		j.SchemaOptions = make([]*JobSourceMysqlSourceSchemaOption, 0, len(dto.Schemas))
+		for _, schemaDto := range dto.Schemas {
+			schema := &JobSourceMysqlSourceSchemaOption{}
+			err := schema.FromDto(schemaDto)
+			if err != nil {
+				return err
+			}
+			j.SchemaOptions = append(j.SchemaOptions, schema)
 		}
-		j.SchemaOptions = append(j.SchemaOptions, schema)
 	}
 	j.SubsetByForeignKeyConstraints = types.BoolValue(dto.SubsetByForeignKeyConstraints)
 

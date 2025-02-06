@@ -59,10 +59,6 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 						Description: "Postgres specific connection configurations",
 						Optional:    true,
 						Attributes: map[string]schema.Attribute{
-							"halt_on_new_column_addition": schema.BoolAttribute{
-								Description: "(Deprecated) Whether or not to halt the job if it detects a new column that has been added in the source that has not been defined in the mappings schema",
-								Optional:    true,
-							},
 							"new_column_addition_strategy": schema.SingleNestedAttribute{
 								Description: "Strategy for handling new column additions",
 								Optional:    true,
@@ -79,9 +75,30 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 									},
 								},
 							},
+							"column_removal_strategy": schema.SingleNestedAttribute{
+								Description: "Strategy for handling column removals",
+								Optional:    true,
+								Attributes: map[string]schema.Attribute{
+									"halt_job": schema.SingleNestedAttribute{
+										Description: "Halt job if a column is detected",
+										Optional:    true,
+										Attributes:  map[string]schema.Attribute{},
+									},
+									"continue_job": schema.SingleNestedAttribute{
+										Description: "Continue job even if a column is detected",
+										Optional:    true,
+										Attributes:  map[string]schema.Attribute{},
+									},
+								},
+							},
 							"connection_id": schema.StringAttribute{
 								Description: "The unique identifier of the connection that is to be used as the source",
 								Required:    true,
+							},
+							"subset_by_foreign_key_constraints": schema.BoolAttribute{
+								Description: "Whether or not to subset the source tables by foreign key constraints",
+								Optional:    true,
+								Computed:    true,
 							},
 							"schemas": schema.ListNestedAttribute{
 								Description: "A list of schemas and table specific options",
@@ -117,13 +134,30 @@ func (r *JobResource) Schema(ctx context.Context, req resource.SchemaRequest, re
 						Description: "Mysql specific connection configurations",
 						Optional:    true,
 						Attributes: map[string]schema.Attribute{
-							"halt_on_new_column_addition": schema.BoolAttribute{
-								Description: "Whether or not to halt the job if it detects a new column that has been added in the source that has not been defined in the mappings schema",
-								Required:    true,
-							},
 							"connection_id": schema.StringAttribute{
 								Description: "The unique identifier of the connection that is to be used as the source",
 								Required:    true,
+							},
+							"subset_by_foreign_key_constraints": schema.BoolAttribute{
+								Description: "Whether or not to subset the source tables by foreign key constraints",
+								Optional:    true,
+								Computed:    true,
+							},
+							"column_removal_strategy": schema.SingleNestedAttribute{
+								Description: "Strategy for handling column removals",
+								Optional:    true,
+								Attributes: map[string]schema.Attribute{
+									"halt_job": schema.SingleNestedAttribute{
+										Description: "Halt job if a column is detected",
+										Optional:    true,
+										Attributes:  map[string]schema.Attribute{},
+									},
+									"continue_job": schema.SingleNestedAttribute{
+										Description: "Continue job even if a column is detected",
+										Optional:    true,
+										Attributes:  map[string]schema.Attribute{},
+									},
+								},
 							},
 							"schemas": schema.ListNestedAttribute{
 								Description: "A list of schemas and table specific options",
@@ -459,7 +493,7 @@ func (r *JobResource) Update(ctx context.Context, req resource.UpdateRequest, re
 		return
 	}
 
-	updateJobRequest, err := planModel.ToUpdateJobDto(&stateModel, planModel.Id.ValueString())
+	updateJobRequest, err := stateModel.ToUpdateJobDto(&planModel, planModel.Id.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("unable to create update job request", err.Error())
 		return

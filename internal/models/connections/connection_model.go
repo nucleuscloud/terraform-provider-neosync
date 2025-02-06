@@ -285,7 +285,7 @@ func (c *ConnectionResourceModel) ToConnectionConfigDto() (*mgmtv1alpha1.Connect
 		}, nil
 	}
 
-	return nil, nil
+	return nil, errors.New("unable to find a config to hydrate connection resource model")
 }
 
 func (c *ConnectionResourceModel) FromConnectionConfigDto(dto *mgmtv1alpha1.ConnectionConfig) error {
@@ -300,9 +300,10 @@ func (c *ConnectionResourceModel) FromConnectionConfigDto(dto *mgmtv1alpha1.Conn
 				User:    types.StringValue(pgcc.Connection.User),
 				Pass:    types.StringValue(pgcc.Connection.Pass),
 				SslMode: types.StringPointerValue(pgcc.Connection.SslMode),
-				Tunnel:  &SSHTunnel{},
+				Tunnel:  nil,
 			}
 			if config.PgConfig.Tunnel != nil {
+				c.Postgres.Tunnel = &SSHTunnel{}
 				if err := c.Postgres.Tunnel.FromDto(config.PgConfig.Tunnel); err != nil {
 					return err
 				}
@@ -312,9 +313,10 @@ func (c *ConnectionResourceModel) FromConnectionConfigDto(dto *mgmtv1alpha1.Conn
 		case *mgmtv1alpha1.PostgresConnectionConfig_Url:
 			c.Postgres = &Postgres{
 				Url:    types.StringValue(pgcc.Url),
-				Tunnel: &SSHTunnel{},
+				Tunnel: nil,
 			}
 			if config.PgConfig.Tunnel != nil {
+				c.Postgres.Tunnel = &SSHTunnel{}
 				if err := c.Postgres.Tunnel.FromDto(config.PgConfig.Tunnel); err != nil {
 					return err
 				}
@@ -333,9 +335,10 @@ func (c *ConnectionResourceModel) FromConnectionConfigDto(dto *mgmtv1alpha1.Conn
 				User:     types.StringValue(mycc.Connection.User),
 				Pass:     types.StringValue(mycc.Connection.Pass),
 				Protocol: types.StringValue(mycc.Connection.Protocol),
-				Tunnel:   &SSHTunnel{},
+				Tunnel:   nil,
 			}
 			if config.MysqlConfig.Tunnel != nil {
+				c.Mysql.Tunnel = &SSHTunnel{}
 				if err := c.Mysql.Tunnel.FromDto(config.MysqlConfig.Tunnel); err != nil {
 					return err
 				}
@@ -344,9 +347,10 @@ func (c *ConnectionResourceModel) FromConnectionConfigDto(dto *mgmtv1alpha1.Conn
 		case *mgmtv1alpha1.MysqlConnectionConfig_Url:
 			c.Mysql = &Mysql{
 				Url:    types.StringValue(mycc.Url),
-				Tunnel: &SSHTunnel{},
+				Tunnel: nil,
 			}
 			if config.MysqlConfig.Tunnel != nil {
+				c.Mysql.Tunnel = &SSHTunnel{}
 				if err := c.Mysql.Tunnel.FromDto(config.MysqlConfig.Tunnel); err != nil {
 					return err
 				}
