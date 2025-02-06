@@ -707,3 +707,162 @@ resource "neosync_job" "job1" {
 		},
 	})
 }
+
+func TestAcc_Job_VirtualForeignKey(t *testing.T) {
+	name := acctest.RandString(10)
+
+	config := fmt.Sprintf(`
+resource "neosync_connection" "source" {
+	name = "%s-src"
+
+	postgres = {
+		url = "test-url"
+	}
+}
+resource "neosync_connection" "destination" {
+	name = "%s-dest"
+
+	postgres = {
+		url = "test-url2"
+	}
+}
+
+resource "neosync_job" "job1" {
+	name = "%s"
+	source = {
+		postgres = {
+			connection_id = neosync_connection.source.id
+		}
+	}
+	destinations = [
+		{
+			connection_id = neosync_connection.destination.id
+			postgres = {
+				init_table_schema = false
+				truncate_table = {
+					truncate_before_insert = true
+					cascade = true
+				}
+			}
+		}
+	]
+	mappings = [
+		{
+			schema = "public"
+			table = "users"
+			column = "id"
+			transformer = {
+				config = {
+					passthrough = {}
+				}
+			}
+		}
+	]
+	virtual_foreign_keys = [
+		{
+			schema = "public"
+			table = "users"
+			columns = ["id"]
+			foreign_key = {
+				schema = "public"
+				table = "users"
+				columns = ["id2"]
+			}
+		}
+	]
+}
+	`, name, name, name)
+
+	config2 := fmt.Sprintf(`
+resource "neosync_connection" "source" {
+	name = "%s-src"
+
+	postgres = {
+		url = "test-url"
+	}
+}
+resource "neosync_connection" "destination" {
+	name = "%s-dest"
+
+	postgres = {
+		url = "test-url2"
+	}
+}
+
+resource "neosync_job" "job1" {
+	name = "%s"
+	source = {
+		postgres = {
+			connection_id = neosync_connection.source.id
+		}
+	}
+	destinations = [
+		{
+			connection_id = neosync_connection.destination.id
+			postgres = {
+				init_table_schema = false
+				truncate_table = {
+					truncate_before_insert = true
+					cascade = true
+				}
+			}
+		}
+	]
+	mappings = [
+		{
+			schema = "public"
+			table = "users"
+			column = "id"
+			transformer = {
+				config = {
+					passthrough = {}
+				}
+			}
+		}
+	]
+	virtual_foreign_keys = [
+		{
+			schema = "public"
+			table = "users"
+			columns = ["id"]
+			foreign_key = {
+				schema = "public"
+				table = "users"
+				columns = ["id2"]
+			}
+		},
+		{
+			schema = "public"
+			table = "accounts"
+			columns = ["user_id"]
+			foreign_key = {
+				schema = "public"
+				table = "users"
+				columns = ["id"]
+			}
+		}
+	]
+}
+	`, name, name, name)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("neosync_job.job1", "id"),
+					resource.TestCheckResourceAttr("neosync_job.job1", "virtual_foreign_keys.#", "1"),
+				),
+			},
+			{
+				Config: config2,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet("neosync_job.job1", "id"),
+					resource.TestCheckResourceAttr("neosync_job.job1", "virtual_foreign_keys.#", "2"),
+				),
+			},
+		},
+	})
+}
