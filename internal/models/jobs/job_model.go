@@ -122,9 +122,33 @@ type JobDestination struct {
 	// todo: fill out remaining destinations
 }
 type JobDestinationPostgresOptions struct {
-	TruncateTable   *PostgresDestinationTruncateTable `tfsdk:"truncate_table"`
-	InitTableSchema types.Bool                        `tfsdk:"init_table_schema"`
+	TruncateTable            *PostgresDestinationTruncateTable `tfsdk:"truncate_table"`
+	InitTableSchema          types.Bool                        `tfsdk:"init_table_schema"`
+	OnConflictConfig         *PostgresOnConflictConfig         `tfsdk:"on_conflict_config"`
+	SkipForeignKeyViolations types.Bool                        `tfsdk:"skip_foreign_key_violations"`
+	MaxInFlight              types.Int64                       `tfsdk:"max_in_flight"`
+	Batch                    *BatchConfig                      `tfsdk:"batch"`
 }
+
+type BatchConfig struct {
+	Count  types.Int64  `tfsdk:"count"`
+	Period types.String `tfsdk:"period"`
+}
+
+type PostgresOnConflictConfig struct {
+	OnConflictStrategy *PostgresOnConflictStrategy `tfsdk:"on_conflict_strategy"`
+}
+
+type PostgresOnConflictStrategy struct {
+	Nothing *PostgresOnConflictNothing `tfsdk:"nothing"`
+	Update  *PostgresOnConflictUpdate  `tfsdk:"update"`
+}
+
+type PostgresOnConflictNothing struct{}
+
+type PostgresOnConflictUpdate struct {
+}
+
 type PostgresDestinationTruncateTable struct {
 	TruncateBeforeInsert types.Bool `tfsdk:"truncate_before_insert"`
 	Cascade              types.Bool `tfsdk:"cascade"`
