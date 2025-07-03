@@ -10,9 +10,9 @@ on:
   push:
     paths-ignore:
       - "README.md"
-  schedule:
-    # Runs every day at 9 AM Pacific Time (when PT is UTC-8)
-    - cron: "0 17 * * *"
+  # schedule:
+  #   # Runs every day at 9 AM Pacific Time (when PT is UTC-8)
+  #   - cron: "0 17 * * *"
 
 # Testing only needs permissions to read the repository contents.
 permissions:
